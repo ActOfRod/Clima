@@ -28,11 +28,21 @@ export function CurrentHero({ compact = false }: { compact?: boolean }) {
         </div>
         <p className="mt-1 text-sm text-[#8b9cb3]">
           Chance of rain: {Math.round(weather.current.rainChance)}%
+          {weather.skill ? ` · ${weather.skill.label} confidence` : ""}
         </p>
         <div className={`mt-5 font-semibold leading-none ${compact ? "text-6xl" : "text-7xl md:text-8xl"}`}>
           {formatTemp(weather.current.temperature, settings.units)}
         </div>
         <p className="mt-3 text-sm text-[#8b9cb3]">{look.label}</p>
+        {weather.skill?.label !== "High" &&
+          weather.skill?.rangeLow != null &&
+          weather.skill?.rangeHigh != null && (
+            <p className="mt-1 text-sm text-[#f5c16c]">
+              Models spread{" "}
+              {formatTemp(weather.skill.rangeLow, settings.units)}–
+              {formatTemp(weather.skill.rangeHigh, settings.units)} over the next 12h
+            </p>
+          )}
       </div>
       <WeatherIcon
         code={weather.current.weatherCode}

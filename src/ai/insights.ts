@@ -26,6 +26,17 @@ export function generateBriefing(bundle: WeatherBundle): AiBriefing {
     });
   }
 
+  const skill = bundle.skill;
+  if (skill && skill.label !== "High") {
+    cards.push({
+      id: "skill",
+      title:
+        skill.label === "Low" ? "Low forecast confidence" : "Models only partly agree",
+      body: skill.reason,
+      tone: skill.label === "Low" ? "watch" : "calm",
+    });
+  }
+
   if (rainSoon) {
     const when = new Date(rainSoon.time);
     const mins = Math.max(
@@ -102,7 +113,7 @@ export function generateBriefing(bundle: WeatherBundle): AiBriefing {
     summary,
     clothing,
     bestWindow: best,
-    cards: cards.slice(0, 4),
+    cards: cards.slice(0, 5),
     activities,
   };
 }

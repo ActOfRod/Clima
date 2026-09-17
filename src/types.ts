@@ -30,6 +30,8 @@ export interface CurrentWeather {
   isDay: boolean;
   visibility: number | null;
   dewPoint: number | null;
+  tempLow?: number;
+  tempHigh?: number;
 }
 
 export interface HourPoint {
@@ -43,6 +45,9 @@ export interface HourPoint {
   uvIndex: number;
   isDay: boolean;
   humidity: number;
+  tempLow?: number;
+  tempHigh?: number;
+  agreement?: number;
 }
 
 export interface DayPoint {
@@ -80,6 +85,24 @@ export interface AlertItem {
   source: "nws";
 }
 
+export interface ForecastSkill {
+  score: number;
+  label: "High" | "Moderate" | "Low";
+  reason: string;
+  tempSpread: number;
+  rainSplit: boolean;
+  sources: string[];
+  rangeLow?: number;
+  rangeHigh?: number;
+}
+
+export interface PersonalModel {
+  tempBias: number;
+  rainScale: number;
+  samples: number;
+  lastByPlace: Record<string, number>;
+}
+
 export interface WeatherBundle {
   place: Place;
   current: CurrentWeather;
@@ -89,6 +112,7 @@ export interface WeatherBundle {
   alerts: AlertItem[];
   updatedAt: string;
   sources: string[];
+  skill?: ForecastSkill;
 }
 
 export interface RadarFrame {

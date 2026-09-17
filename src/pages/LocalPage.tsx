@@ -7,6 +7,8 @@ import {
   ThermometerSnowflake,
 } from "lucide-react";
 import { AiInsights } from "../components/weather/AiInsights";
+import { ConfidenceCard } from "../components/weather/ConfidenceCard";
+import { FeedbackBar } from "../components/weather/FeedbackBar";
 import { CurrentHero } from "../components/weather/CurrentHero";
 import { HourlyForecast } from "../components/weather/HourlyForecast";
 import { SearchBar } from "../components/weather/SearchBar";
@@ -73,6 +75,8 @@ export function LocalPage() {
     <div className="flex flex-col gap-5">
       <SearchBar />
       <CurrentHero compact />
+      <ConfidenceCard />
+      <FeedbackBar />
       <AiInsights />
       {weather.alerts.length > 0 && (
         <section className="card space-y-3 p-5">

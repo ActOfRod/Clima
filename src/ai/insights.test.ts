@@ -107,6 +107,22 @@ describe("generateBriefing", () => {
     expect(result.summary.toLowerCase()).toMatch(/wet|rain/);
   });
 
+  it("calls out low model agreement", () => {
+    const result = generateBriefing(
+      bundle({
+        skill: {
+          score: 42,
+          label: "Low",
+          reason: "This is a messy pattern — members disagree.",
+          tempSpread: 3,
+          rainSplit: true,
+          sources: ["GEFS"],
+        },
+      }),
+    );
+    expect(result.cards.some((c) => c.id === "skill")).toBe(true);
+  });
+
   it("surfaces nws alerts first", () => {
     const result = generateBriefing(
       bundle({

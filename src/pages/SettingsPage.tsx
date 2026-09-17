@@ -69,15 +69,15 @@ export function SettingsPage() {
           <a className="text-[#3b9bff]" href="https://api.weather.gov" target="_blank" rel="noreferrer">
             api.weather.gov
           </a>
-          . Radar tiles come from{" "}
+          . US radar is NOAA NEXRAD via Iowa State; elsewhere,{" "}
           <a className="text-[#3b9bff]" href="https://www.rainviewer.com/api.html" target="_blank" rel="noreferrer">
             RainViewer
           </a>
-          .
+          . Confidence uses the GEFS ensemble plus NCEP NBM (US) or ECMWF IFS.
         </p>
         <p className="text-xs text-[#8b9cb3]">
-          Clima AI runs on-device from the forecast — clothing, activity scores, rain timing, and
-          trend callouts without sending your location to an LLM.
+          Clima AI and Teach Clima run on-device. Ensemble spread, clothing, and your colder/wetter
+          notes never leave this phone.
         </p>
         <Link className="inline-block text-sm text-[#3b9bff]" to="/privacy">
           Privacy

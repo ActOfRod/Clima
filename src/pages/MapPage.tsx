@@ -37,7 +37,7 @@ export function MapPage() {
         >
           <TileLayer
             attribution="&copy; OSM &copy; CARTO"
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
           />
           <Marker position={[place.latitude, place.longitude]} icon={pin} />
         </MapContainer>
