@@ -16,72 +16,72 @@ function Recenter({ lat, lon }: { lat: number; lon: number }) {
   return null;
 }
 
+function InvalidateSize() {
+  const map = useMap();
+  useEffect(() => {
+    const run = () => map.invalidateSize({ animate: false });
+    run();
+    const t = window.setTimeout(run, 80);
+    const t2 = window.setTimeout(run, 400);
+    map.whenReady(run);
+    const parent = map.getContainer().parentElement;
+    const ro = parent ? new ResizeObserver(run) : null;
+    if (parent) ro?.observe(parent);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(t2);
+      ro?.disconnect();
+    };
+  }, [map]);
+  return null;
+}
+
 function RadarTiles({
-  urlFor,
-  currentId,
-  previousId,
-  blend,
+  url,
   maxNativeZoom,
 }: {
-  urlFor: (id: string) => string;
-  currentId?: string;
-  previousId?: string;
-  blend: number;
+  url: string;
   maxNativeZoom: number;
 }) {
   const map = useMap();
-  const prevRef = useRef<L.TileLayer | null>(null);
-  const currRef = useRef<L.TileLayer | null>(null);
-  const currId = useRef<string | null>(null);
+  const layerRef = useRef<L.TileLayer | null>(null);
 
   useEffect(() => {
-    currId.current = null;
-    if (prevRef.current) {
-      map.removeLayer(prevRef.current);
-      prevRef.current = null;
+    if (!map.getPane("radar")) {
+      const pane = map.createPane("radar");
+      pane.style.zIndex = "450";
+      pane.style.pointerEvents = "none";
     }
-    if (currRef.current) {
-      map.removeLayer(currRef.current);
-      currRef.current = null;
-    }
-  }, [map, urlFor]);
+    const layer = L.tileLayer(url, {
+      pane: "radar",
+      opacity: 0.88,
+      maxNativeZoom,
+      maxZoom: maxNativeZoom + 2,
+      className: "radar-hd",
+      keepBuffer: 4,
+    });
+    layer.addTo(map);
+    layerRef.current = layer;
+    return () => {
+      map.removeLayer(layer);
+      layerRef.current = null;
+    };
+    // Recreate only if zoom policy changes, not on every frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, maxNativeZoom]);
 
   useEffect(() => {
-    if (!currentId) return;
-
-    if (currId.current !== currentId) {
-      if (prevRef.current) map.removeLayer(prevRef.current);
-      prevRef.current = currRef.current;
-      const next = L.tileLayer(urlFor(currentId), {
-        opacity: 0,
-        zIndex: 5,
-        className: "radar-hd",
-        maxNativeZoom,
-        maxZoom: maxNativeZoom + 2,
-        detectRetina: true,
-        keepBuffer: 6,
-        updateWhenZooming: false,
-        crossOrigin: true,
-      });
-      next.addTo(map);
-      currRef.current = next;
-      currId.current = currentId;
-    }
-
-    const fade = previousId && previousId !== currentId ? blend : 1;
-    currRef.current?.setOpacity(0.92 * fade);
-    prevRef.current?.setOpacity(0.92 * (1 - fade));
-  }, [map, urlFor, previousId, currentId, blend, maxNativeZoom]);
-
-  useEffect(
-    () => () => {
-      if (prevRef.current) map.removeLayer(prevRef.current);
-      if (currRef.current) map.removeLayer(currRef.current);
-    },
-    [map],
-  );
+    layerRef.current?.setUrl(url);
+  }, [url]);
 
   return null;
+}
+
+function formatStamp(unix: number): string {
+  return new Date(unix * 1000).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export function RadarMap({ height = "100%" }: { height?: string }) {
@@ -89,7 +89,6 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
   const conus = isConus(place);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(settings.animations);
-  const [blend, setBlend] = useState(1);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -106,59 +105,41 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
     return conus ? nexradFrames() : gpmFrames();
   }, [conus, tick]);
 
-  const urlFor = useMemo(() => {
-    if (conus) return (id: string) => nexradTileTemplate(id);
-    return (id: string) => gpmTileTemplate(id);
-  }, [conus]);
-
-  const maxNativeZoom = conus ? 9 : 6;
+  const maxNativeZoom = conus ? 8 : 6;
 
   useEffect(() => {
     if (!playing || frames.length < 2) return;
-    let start = performance.now();
-    const stepMs = conus ? 200 : 320;
-    let raf = 0;
-    const loop = (now: number) => {
-      const t = (now - start) / stepMs;
-      if (t >= 1) {
-        start = now;
-        setBlend(1);
-        setIndex((i) => (i + 1) % frames.length);
-      } else {
-        setBlend(Math.min(1, t));
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % frames.length);
+    }, conus ? 450 : 700);
+    return () => window.clearInterval(id);
   }, [playing, frames.length, conus]);
 
   const safeIndex = Math.min(index, Math.max(0, frames.length - 1));
   const current = frames[safeIndex] ?? frames[frames.length - 1];
-  const previous = frames[(safeIndex - 1 + frames.length) % frames.length];
-  const ready = Boolean(current);
-  const fmt = (unix: number) =>
-    new Date(unix * 1000).toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  const stamp = current ? fmt(current.time) : "";
-  const startStamp = frames[0] ? fmt(frames[0].time) : "";
-  const endStamp = frames.at(-1) ? fmt(frames.at(-1)!.time) : "";
+  const url = current
+    ? conus
+      ? nexradTileTemplate(current.id)
+      : gpmTileTemplate(current.id)
+    : "";
+  const stamp = current ? formatStamp(current.time) : "";
+  const startStamp = frames[0] ? formatStamp(frames[0].time) : "";
+  const endStamp = frames.at(-1) ? formatStamp(frames.at(-1)!.time) : "";
 
   return (
     <div
       className="flex flex-col overflow-hidden rounded-[28px] ring-1 ring-white/10"
       style={{ height }}
     >
-      <div className="relative min-h-0 flex-1">
+      <div className="relative" style={{ height: "calc(100% - 96px)" }}>
         <MapContainer
           key={conus ? "nexrad-hd" : "gpm-hd"}
           center={[place.latitude, place.longitude]}
-          zoom={conus ? 8 : 4}
+          zoom={conus ? 7 : 4}
           minZoom={3}
           maxZoom={maxNativeZoom + 2}
           className="h-full w-full"
+          style={{ height: "100%", width: "100%" }}
           zoomControl
           attributionControl
         >
@@ -166,19 +147,12 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
             attribution="Tiles &copy; Esri"
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           />
-          {ready && current && (
-            <RadarTiles
-              urlFor={urlFor}
-              currentId={current.id}
-              previousId={previous?.id}
-              blend={blend}
-              maxNativeZoom={maxNativeZoom}
-            />
-          )}
+          {url && <RadarTiles url={url} maxNativeZoom={maxNativeZoom} />}
           <Recenter lat={place.latitude} lon={place.longitude} />
+          <InvalidateSize />
         </MapContainer>
       </div>
-      <div className="relative z-20 shrink-0 bg-[#10192a] px-4 py-3 ring-1 ring-white/10">
+      <div className="relative z-20 shrink-0 bg-[#10192a] px-4 py-3">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -197,7 +171,6 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
               onPointerDown={() => setPlaying(false)}
               onChange={(e) => {
                 setPlaying(false);
-                setBlend(1);
                 setIndex(Number(e.target.value));
               }}
               className="radar-scrub"
