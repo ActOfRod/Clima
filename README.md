@@ -7,20 +7,20 @@ Live: [https://actofrod.github.io/Clima/](https://actofrod.github.io/Clima/)
 ## What’s in the app
 
 - **Weather (home)** — current conditions, hourly strip, air conditions, 7-day forecast
-- **Local** — on-device Clima AI briefing, NWS alerts (US), humidity, dew point, pressure, sun times
-- **Radar** — RainViewer frames with smooth playback and nowcast
+- **Local** — on-device Clima AI briefing, forecast trust, teach-Clima feedback, NWS alerts (US)
+- **Radar** — NOAA NEXRAD in the US (no logos); RainViewer elsewhere, zoom-capped so tiles stay clean
 - **Cities / Map / Settings** — saved places, location map, units, privacy
 
 Desktop and tablet use a sidebar shell inspired by the reference dashboard. Phones use a stacked layout with a bottom tab bar.
 
 ## Clima AI
 
-Insights run **on-device** from the forecast (no LLM key, nothing leaves the device):
+Insights run **on-device** (no LLM key, nothing leaves the device):
 
-- Natural-language briefing and clothing
-- Rain timing and best outdoor window
-- UV / air-quality / trend callouts
-- Activity scores (run, hang, photo, commute)
+- **Ensemble honesty** — GEFS members plus NCEP NBM (US) or ECMWF IFS (elsewhere). When models split, Clima shows a range instead of a fake-precise number
+- Rain chance is blended from the high-res model, the national blend, and ensemble wet-member fraction
+- Clothing, rain timing, UV / air-quality callouts, activity scores
+- **Teach Clima** — on-device bias for “felt colder / wetter than this” so the app learns *your* climate, not a national average
 
 ## Free weather APIs
 
@@ -28,10 +28,11 @@ GitHub Pages is a static host, so Clima only calls **no-key, CORS-friendly** API
 
 | API | Use in Clima | Key | Coverage |
 | --- | --- | --- | --- |
-| [Open-Meteo](https://open-meteo.com) | Forecast, air quality, geocoding | None | Global |
+| [Open-Meteo](https://open-meteo.com) | Forecast, air quality, geocoding, GEFS ensemble, NBM, IFS | None | Global |
 | [api.weather.gov](https://api.weather.gov) | US watches / warnings | None (User-Agent) | United States |
-| [RainViewer](https://www.rainviewer.com/api.html) | Radar + nowcast tiles | None | Global radar mosaic |
-| [CARTO / OSM](https://carto.com) | Dark basemap | None | Global |
+| [Iowa State IEM](https://mesonet.agron.iastate.edu/) | NEXRAD reflectivity mosaic | None | CONUS |
+| [RainViewer](https://www.rainviewer.com/api.html) | Radar + nowcast tiles | None | Global (outside CONUS) |
+| [CARTO / OSM](https://carto.com) | Dark unlabeled basemap | None | Global |
 
 Other free or free-tier APIs reviewed, **not wired** (key, CORS, or region limits):
 

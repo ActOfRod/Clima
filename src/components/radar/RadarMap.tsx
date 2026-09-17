@@ -2,9 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Pause, Play } from "lucide-react";
-import { allRadarFrames, fetchRadarCatalog } from "../../api/rainviewer";
+import { nexradFrames, nexradTileTemplate } from "../../api/nexrad";
+import {
+  allRadarFrames,
+  fetchRadarCatalog,
+  radarTileTemplate,
+} from "../../api/rainviewer";
 import { useApp } from "../../context/AppContext";
-import type { RadarCatalog, RadarFrame } from "../../types";
+import { isConus } from "../../lib/geo";
+import type { RadarCatalog } from "../../types";
 import "leaflet/dist/leaflet.css";
 
 function Recenter({ lat, lon }: { lat: number; lon: number }) {
@@ -16,43 +22,45 @@ function Recenter({ lat, lon }: { lat: number; lon: number }) {
 }
 
 function RadarTiles({
-  host,
-  previous,
-  current,
+  urlFor,
+  currentId,
+  previousId,
   blend,
+  maxNativeZoom,
 }: {
-  host: string;
-  previous?: RadarFrame;
-  current?: RadarFrame;
+  urlFor: (id: string) => string;
+  currentId?: string;
+  previousId?: string;
   blend: number;
+  maxNativeZoom: number;
 }) {
   const map = useMap();
   const prevRef = useRef<L.TileLayer | null>(null);
   const currRef = useRef<L.TileLayer | null>(null);
-  const currTime = useRef<number | null>(null);
+  const currId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!current) return;
-    const url = (frame: RadarFrame) =>
-      `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
+    if (!currentId) return;
 
-    if (currTime.current !== current.time) {
+    if (currId.current !== currentId) {
       if (prevRef.current) map.removeLayer(prevRef.current);
       prevRef.current = currRef.current;
-      const next = L.tileLayer(url(current), {
+      const next = L.tileLayer(urlFor(currentId), {
         opacity: 0,
         zIndex: 5,
         className: "radar-tiles",
+        maxNativeZoom,
+        maxZoom: maxNativeZoom,
       });
       next.addTo(map);
       currRef.current = next;
-      currTime.current = current.time;
+      currId.current = currentId;
     }
 
-    const fade = previous ? blend : 1;
-    currRef.current?.setOpacity(0.72 * fade);
-    prevRef.current?.setOpacity(0.72 * (1 - fade));
-  }, [map, host, previous, current, blend]);
+    const fade = previousId && previousId !== currentId ? blend : 1;
+    currRef.current?.setOpacity(0.78 * fade);
+    prevRef.current?.setOpacity(0.78 * (1 - fade));
+  }, [map, urlFor, previousId, currentId, blend, maxNativeZoom]);
 
   useEffect(
     () => () => {
@@ -67,6 +75,7 @@ function RadarTiles({
 
 export function RadarMap({ height = "100%" }: { height?: string }) {
   const { place, settings } = useApp();
+  const conus = isConus(place);
   const [catalog, setCatalog] = useState<RadarCatalog | null>(null);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(settings.animations);
@@ -74,6 +83,12 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (conus) {
+      setCatalog(null);
+      setError(null);
+      setIndex(nexradFrames().length - 1);
+      return;
+    }
     let live = true;
     fetchRadarCatalog()
       .then((c) => {
@@ -93,9 +108,24 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
       live = false;
       clearInterval(refresh);
     };
-  }, []);
+  }, [conus]);
 
-  const frames = useMemo(() => (catalog ? allRadarFrames(catalog) : []), [catalog]);
+  const frames = useMemo(() => {
+    if (conus) {
+      return nexradFrames().map((f) => ({ id: f.id, time: f.time }));
+    }
+    return catalog
+      ? allRadarFrames(catalog).map((f) => ({ id: f.path, time: f.time }))
+      : [];
+  }, [conus, catalog]);
+
+  const urlFor = useMemo(() => {
+    if (conus) return (id: string) => nexradTileTemplate(id);
+    const host = catalog?.host ?? "";
+    return (id: string) => radarTileTemplate(host, id);
+  }, [conus, catalog]);
+
+  const maxNativeZoom = conus ? 9 : 7;
 
   useEffect(() => {
     if (!playing || frames.length < 2) return;
@@ -119,6 +149,7 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
 
   const current = frames[index];
   const previous = frames[(index - 1 + frames.length) % frames.length];
+  const ready = conus || !!catalog;
   const stamp = current
     ? new Date(current.time * 1000).toLocaleTimeString(undefined, {
         hour: "numeric",
@@ -134,24 +165,26 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
         </div>
       )}
       <MapContainer
+        key={conus ? "nexrad" : "rainviewer"}
         center={[place.latitude, place.longitude]}
-        zoom={6}
+        zoom={conus ? 7 : 5}
         minZoom={3}
-        maxZoom={10}
+        maxZoom={maxNativeZoom}
         className="h-full w-full"
         zoomControl
         attributionControl
       >
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OSM'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
         />
-        {catalog && current && (
+        {ready && current && (
           <RadarTiles
-            host={catalog.host}
-            previous={previous}
-            current={current}
+            urlFor={urlFor}
+            currentId={current.id}
+            previousId={previous?.id}
             blend={blend}
+            maxNativeZoom={maxNativeZoom}
           />
         )}
         <Recenter lat={place.latitude} lon={place.longitude} />
@@ -181,7 +214,11 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
           <div className="w-16 text-right text-xs text-[#c5d0e0]">{stamp}</div>
         </div>
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] text-[#8b9cb3]">
-          <span>Radar © RainViewer</span>
+          <span>
+            {conus
+              ? "NOAA NEXRAD via Iowa State"
+              : "Radar © RainViewer (zoom limited to keep tiles clean)"}
+          </span>
           <span className="flex items-center gap-2">
             Light
             <span className="h-2 w-24 rounded-full bg-gradient-to-r from-[#3dd6c6] via-[#f5c16c] to-[#ff5d73]" />

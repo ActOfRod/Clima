@@ -28,15 +28,8 @@ export async function fetchRadarCatalog(): Promise<RadarCatalog> {
   return { host, frames: past, nowcast };
 }
 
-export function radarTileUrl(
-  host: string,
-  path: string,
-  z: number,
-  x: number,
-  y: number,
-  colorScheme = 2,
-): string {
-  return `${host}${path}/256/${z}/${x}/${y}/${colorScheme}/1_1.png`;
+export function radarTileTemplate(host: string, path: string): string {
+  return host + path + "/512/{z}/{x}/{y}/6/1_0.png";
 }
 
 export function allRadarFrames(catalog: RadarCatalog): RadarFrame[] {

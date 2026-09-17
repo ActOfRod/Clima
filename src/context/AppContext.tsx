@@ -10,9 +10,17 @@ import {
 import { reverseGeocode } from "../api/geocoding";
 import { loadWeather } from "../api/weather";
 import { generateBriefing } from "../ai/insights";
+import {
+  DEFAULT_PERSONAL,
+  applyFeedback,
+  applyPersonal,
+  canFeedback,
+  type FeedbackKind,
+} from "../lib/personalModel";
 import { readJson, writeJson } from "../lib/storage";
 import type {
   AiBriefing,
+  PersonalModel,
   Place,
   SettingsState,
   WeatherBundle,
@@ -43,12 +51,15 @@ interface AppState {
   loading: boolean;
   error: string | null;
   locating: boolean;
+  personal: PersonalModel;
   setPlace: (place: Place, persist?: boolean) => void;
   refresh: () => void;
   toggleSave: (place: Place) => void;
   isSaved: (id: string) => boolean;
   updateSettings: (patch: Partial<SettingsState>) => void;
   requestLocation: () => void;
+  recordFeedback: (kind: FeedbackKind) => void;
+  canRecordFeedback: () => boolean;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -66,10 +77,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [tick, setTick] = useState(0);
+  const [personal, setPersonal] = useState<PersonalModel>(() =>
+    readJson<PersonalModel>("personal", DEFAULT_PERSONAL),
+  );
+
+  const displayWeather = useMemo(
+    () => (weather ? applyPersonal(weather, personal) : null),
+    [weather, personal],
+  );
 
   const briefing = useMemo(
-    () => (weather ? generateBriefing(weather) : null),
-    [weather],
+    () => (displayWeather ? generateBriefing(displayWeather) : null),
+    [displayWeather],
   );
 
   const setPlace = useCallback((next: Place, persist = true) => {
@@ -99,6 +118,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isSaved = useCallback(
     (id: string) => saved.some((p) => p.id === id),
     [saved],
+  );
+
+  const recordFeedback = useCallback(
+    (kind: FeedbackKind) => {
+      setPersonal((prev) => {
+        const next = applyFeedback(prev, kind, place.id);
+        writeJson("personal", next);
+        return next;
+      });
+    },
+    [place.id],
+  );
+
+  const canRecordFeedback = useCallback(
+    () => canFeedback(personal, place.id),
+    [personal, place.id],
   );
 
   const applyCoords = useCallback(
@@ -163,32 +198,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
       place,
       saved,
       settings,
-      weather,
+      weather: displayWeather,
       briefing,
       loading,
       error,
       locating,
+      personal,
       setPlace,
       refresh: () => setTick((n) => n + 1),
       toggleSave,
       isSaved,
       updateSettings,
       requestLocation,
+      recordFeedback,
+      canRecordFeedback,
     }),
     [
       place,
       saved,
       settings,
-      weather,
+      displayWeather,
       briefing,
       loading,
       error,
       locating,
+      personal,
       setPlace,
       toggleSave,
       isSaved,
       updateSettings,
       requestLocation,
+      recordFeedback,
+      canRecordFeedback,
     ],
   );
 

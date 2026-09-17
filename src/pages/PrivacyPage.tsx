@@ -8,8 +8,8 @@ export function PrivacyPage() {
       </p>
       <p>
         If you allow location, the coordinates stay on your device and are used only to reverse
-        geocode a place name and fetch weather for that point. Saved cities, unit preferences, and
-        the last viewed place are stored in local browser storage.
+        geocode a place name and fetch weather for that point. Saved cities, unit preferences,
+        Teach Clima notes, and the last viewed place are stored in local browser storage.
       </p>
       <p>
         Clima AI does not send your data to a language-model provider. Insights are computed locally
