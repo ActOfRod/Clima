@@ -69,11 +69,8 @@ export function SettingsPage() {
           <a className="text-[#3b9bff]" href="https://api.weather.gov" target="_blank" rel="noreferrer">
             api.weather.gov
           </a>
-          . US radar is NOAA NEXRAD via Iowa State; elsewhere,{" "}
-          <a className="text-[#3b9bff]" href="https://www.rainviewer.com/api.html" target="_blank" rel="noreferrer">
-            RainViewer
-          </a>
-          . Confidence uses the GEFS ensemble plus NCEP NBM (US) or ECMWF IFS.
+          . US radar is NOAA NEXRAD via Iowa State. Global radar is NASA GPM IMERG (no
+          watermarks). Confidence uses the GEFS ensemble plus NCEP NBM (US) or ECMWF IFS.
         </p>
         <p className="text-xs text-[#8b9cb3]">
           Clima AI and Teach Clima run on-device. Ensemble spread, clothing, and your colder/wetter

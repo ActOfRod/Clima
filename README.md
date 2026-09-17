@@ -8,7 +8,7 @@ Live: [https://actofrod.github.io/Clima/](https://actofrod.github.io/Clima/)
 
 - **Weather (home)** — current conditions, hourly strip, air conditions, 7-day forecast
 - **Local** — on-device Clima AI briefing, forecast trust, teach-Clima feedback, NWS alerts (US)
-- **Radar** — NOAA NEXRAD in the US (no logos); RainViewer elsewhere, zoom-capped so tiles stay clean
+- **Radar** — HD NOAA NEXRAD in the US; NASA GPM IMERG worldwide (no watermarks)
 - **Cities / Map / Settings** — saved places, location map, units, privacy
 
 Desktop and tablet use a sidebar shell inspired by the reference dashboard. Phones use a stacked layout with a bottom tab bar.
@@ -30,8 +30,8 @@ GitHub Pages is a static host, so Clima only calls **no-key, CORS-friendly** API
 | --- | --- | --- | --- |
 | [Open-Meteo](https://open-meteo.com) | Forecast, air quality, geocoding, GEFS ensemble, NBM, IFS | None | Global |
 | [api.weather.gov](https://api.weather.gov) | US watches / warnings | None (User-Agent) | United States |
-| [Iowa State IEM](https://mesonet.agron.iastate.edu/) | NEXRAD reflectivity mosaic | None | CONUS |
-| [RainViewer](https://www.rainviewer.com/api.html) | Radar + nowcast tiles | None | Global (outside CONUS) |
+| [Iowa State IEM](https://mesonet.agron.iastate.edu/) | HD NEXRAD reflectivity mosaic | None | CONUS |
+| [NASA GIBS / GPM IMERG](https://nasa.gov) | Global precipitation radar | None | Global |
 | [CARTO / OSM](https://carto.com) | Dark unlabeled basemap | None | Global |
 
 Other free or free-tier APIs reviewed, **not wired** (key, CORS, or region limits):
