@@ -36,8 +36,8 @@ export function MapPage() {
           key={`${place.latitude}-${place.longitude}`}
         >
           <TileLayer
-            attribution="&copy; OSM &copy; CARTO"
-            url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
+            attribution="Tiles &copy; Esri"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           />
           <Marker position={[place.latitude, place.longitude]} icon={pin} />
         </MapContainer>
