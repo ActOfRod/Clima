@@ -67,3 +67,12 @@ input {
   color: #fff !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
+
+.radar-hd {
+  filter: saturate(1.55) contrast(1.18) brightness(1.06);
+}
+
+.radar-hd img {
+  image-rendering: auto !important;
+  mix-blend-mode: screen;
+}
