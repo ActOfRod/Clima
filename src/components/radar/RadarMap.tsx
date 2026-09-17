@@ -133,68 +133,84 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
     return () => cancelAnimationFrame(raf);
   }, [playing, frames.length, conus]);
 
-  const current = frames[index] ?? frames[frames.length - 1];
-  const previous = frames[(index - 1 + frames.length) % frames.length];
+  const safeIndex = Math.min(index, Math.max(0, frames.length - 1));
+  const current = frames[safeIndex] ?? frames[frames.length - 1];
+  const previous = frames[(safeIndex - 1 + frames.length) % frames.length];
   const ready = Boolean(current);
-  const stamp = current
-    ? new Date(current.time * 1000).toLocaleTimeString(undefined, {
-        hour: "numeric",
-        minute: "2-digit",
-      })
-    : "";
+  const fmt = (unix: number) =>
+    new Date(unix * 1000).toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  const stamp = current ? fmt(current.time) : "";
+  const startStamp = frames[0] ? fmt(frames[0].time) : "";
+  const endStamp = frames.at(-1) ? fmt(frames.at(-1)!.time) : "";
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] ring-1 ring-white/10" style={{ height }}>
-      <MapContainer
-        key={conus ? "nexrad-hd" : "gpm-hd"}
-        center={[place.latitude, place.longitude]}
-        zoom={conus ? 8 : 4}
-        minZoom={3}
-        maxZoom={maxNativeZoom + 2}
-        className="h-full w-full"
-        zoomControl
-        attributionControl
-      >
-        <TileLayer
-          attribution="Tiles &copy; Esri"
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-        />
-        {ready && current && (
-          <RadarTiles
-            urlFor={urlFor}
-            currentId={current.id}
-            previousId={previous?.id}
-            blend={blend}
-            maxNativeZoom={maxNativeZoom}
+    <div
+      className="flex flex-col overflow-hidden rounded-[28px] ring-1 ring-white/10"
+      style={{ height }}
+    >
+      <div className="relative min-h-0 flex-1">
+        <MapContainer
+          key={conus ? "nexrad-hd" : "gpm-hd"}
+          center={[place.latitude, place.longitude]}
+          zoom={conus ? 8 : 4}
+          minZoom={3}
+          maxZoom={maxNativeZoom + 2}
+          className="h-full w-full"
+          zoomControl
+          attributionControl
+        >
+          <TileLayer
+            attribution="Tiles &copy; Esri"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           />
-        )}
-        <Recenter lat={place.latitude} lon={place.longitude} />
-      </MapContainer>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0b1220] to-transparent p-4">
-        <div className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-[#10192a]/90 px-3 py-2 ring-1 ring-white/10">
+          {ready && current && (
+            <RadarTiles
+              urlFor={urlFor}
+              currentId={current.id}
+              previousId={previous?.id}
+              blend={blend}
+              maxNativeZoom={maxNativeZoom}
+            />
+          )}
+          <Recenter lat={place.latitude} lon={place.longitude} />
+        </MapContainer>
+      </div>
+      <div className="relative z-20 shrink-0 bg-[#10192a] px-4 py-3 ring-1 ring-white/10">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setPlaying((p) => !p)}
-            className="rounded-full bg-white/10 p-2"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#3b9bff] text-white"
             aria-label={playing ? "Pause radar" : "Play radar"}
           >
-            {playing ? <Pause size={16} /> : <Play size={16} />}
+            {playing ? <Pause size={18} /> : <Play size={18} />}
           </button>
-          <input
-            type="range"
-            min={0}
-            max={Math.max(0, frames.length - 1)}
-            value={index}
-            onChange={(e) => {
-              setPlaying(false);
-              setBlend(1);
-              setIndex(Number(e.target.value));
-            }}
-            className="w-full accent-[#3b9bff]"
-          />
-          <div className="w-16 text-right text-xs text-[#c5d0e0]">{stamp}</div>
+          <div className="min-w-0 flex-1">
+            <input
+              type="range"
+              min={0}
+              max={Math.max(0, frames.length - 1)}
+              value={safeIndex}
+              onPointerDown={() => setPlaying(false)}
+              onChange={(e) => {
+                setPlaying(false);
+                setBlend(1);
+                setIndex(Number(e.target.value));
+              }}
+              className="radar-scrub"
+              aria-label="Radar time"
+            />
+            <div className="mt-1.5 flex items-center justify-between text-[11px] text-[#8b9cb3]">
+              <span>{startStamp}</span>
+              <span className="font-medium text-white">{stamp}</span>
+              <span>{endStamp}</span>
+            </div>
+          </div>
         </div>
-        <div className="mt-2 flex items-center justify-between px-1 text-[10px] text-[#8b9cb3]">
+        <div className="mt-2 flex items-center justify-between text-[10px] text-[#8b9cb3]">
           <span>
             {conus
               ? "HD NOAA NEXRAD (Iowa State)"

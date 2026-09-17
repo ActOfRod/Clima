@@ -17,7 +17,7 @@ export function RadarPage() {
         </p>
       </div>
       <div className="min-h-0 flex-1">
-        <RadarMap height={desktop ? "min(72vh, 760px)" : "62vh"} />
+        <RadarMap height={desktop ? "min(78vh, 820px)" : "68vh"} />
       </div>
     </div>
   );
