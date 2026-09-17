@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Clima</string>
+    <string name="title_activity_main">Clima</string>
+    <string name="package_name">com.actofrod.clima</string>
+    <string name="custom_url_scheme">com.actofrod.clima</string>
+</resources>
