@@ -77,6 +77,10 @@ input {
   z-index: 450;
 }
 
+.leaflet-radar-pane .leaflet-layer {
+  will-change: opacity;
+}
+
 .radar-scrub {
   -webkit-appearance: none;
   appearance: none;
