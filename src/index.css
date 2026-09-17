@@ -70,12 +70,11 @@ input {
 }
 
 .radar-hd {
-  filter: saturate(1.55) contrast(1.18) brightness(1.06);
+  filter: saturate(1.35) contrast(1.12);
 }
 
-.radar-hd img {
-  image-rendering: auto !important;
-  mix-blend-mode: screen;
+.leaflet-radar-pane {
+  z-index: 450;
 }
 
 .radar-scrub {
