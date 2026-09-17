@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import L from "leaflet";
 import { Pause, Play } from "lucide-react";
 import { gpmFrames, gpmTileTemplate } from "../../api/gpm";
 import { nexradFrames, nexradTileTemplate } from "../../api/nexrad";
 import { useApp } from "../../context/AppContext";
 import { isConus } from "../../lib/geo";
+import { RadarFader } from "./radarFader";
+import {
+  prefetchImages,
+  tileUrlsForFrames,
+  tileZoom,
+  visibleTileRange,
+} from "./radarPlayback";
 import "leaflet/dist/leaflet.css";
 
 function Recenter({ lat, lon }: { lat: number; lon: number }) {
@@ -36,43 +42,94 @@ function InvalidateSize() {
   return null;
 }
 
-function RadarTiles({
-  url,
+function RadarLoop({
+  urls,
+  index,
+  playing,
+  frameMs,
   maxNativeZoom,
+  onIndex,
 }: {
-  url: string;
+  urls: string[];
+  index: number;
+  playing: boolean;
+  frameMs: number;
   maxNativeZoom: number;
+  onIndex: (index: number) => void;
 }) {
   const map = useMap();
-  const layerRef = useRef<L.TileLayer | null>(null);
+  const faderRef = useRef<RadarFader | null>(null);
+  const urlsRef = useRef(urls);
+  const indexRef = useRef(index);
+  const onIndexRef = useRef(onIndex);
+  const cacheRef = useRef<HTMLImageElement[]>([]);
+
+  urlsRef.current = urls;
+  indexRef.current = index;
+  onIndexRef.current = onIndex;
 
   useEffect(() => {
-    if (!map.getPane("radar")) {
-      const pane = map.createPane("radar");
-      pane.style.zIndex = "450";
-      pane.style.pointerEvents = "none";
-    }
-    const layer = L.tileLayer(url, {
-      pane: "radar",
-      opacity: 0.88,
-      maxNativeZoom,
-      maxZoom: maxNativeZoom + 2,
-      className: "radar-hd",
-      keepBuffer: 4,
-    });
-    layer.addTo(map);
-    layerRef.current = layer;
+    const initial = urlsRef.current[indexRef.current] ?? urlsRef.current[0];
+    if (!initial) return;
+    const fader = new RadarFader(map, maxNativeZoom, initial);
+    fader.pos = indexRef.current;
+    faderRef.current = fader;
+    fader.step(urlsRef.current, false, 0, frameMs, indexRef.current);
     return () => {
-      map.removeLayer(layer);
-      layerRef.current = null;
+      fader.destroy();
+      faderRef.current = null;
     };
-    // Recreate only if zoom policy changes, not on every frame.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, maxNativeZoom]);
 
   useEffect(() => {
-    layerRef.current?.setUrl(url);
-  }, [url]);
+    const run = () => {
+      if (urls.length === 0) return;
+      const bounds = map.getBounds();
+      const range = visibleTileRange(
+        {
+          west: bounds.getWest(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          north: bounds.getNorth(),
+        },
+        tileZoom(map.getZoom(), maxNativeZoom),
+        1,
+      );
+      prefetchImages(tileUrlsForFrames(urls, range, 360), cacheRef.current);
+    };
+    run();
+    map.on("moveend zoomend", run);
+    return () => {
+      map.off("moveend zoomend", run);
+    };
+  }, [map, urls, maxNativeZoom]);
+
+  useEffect(() => {
+    if (playing) return;
+    faderRef.current?.step(urls, false, 0, frameMs, index);
+  }, [playing, urls, frameMs, index]);
+
+  useEffect(() => {
+    if (!playing) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const fader = faderRef.current;
+      const list = urlsRef.current;
+      if (fader && list.length > 0) {
+        const dt = Math.min(50, now - last);
+        last = now;
+        const next = fader.step(list, true, dt, frameMs, indexRef.current);
+        if (next !== indexRef.current) {
+          indexRef.current = next;
+          onIndexRef.current(next);
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, frameMs]);
 
   return null;
 }
@@ -87,7 +144,9 @@ function formatStamp(unix: number): string {
 export function RadarMap({ height = "100%" }: { height?: string }) {
   const { place, settings } = useApp();
   const conus = isConus(place);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() =>
+    isConus(place) ? nexradFrames().length - 1 : gpmFrames().length - 1,
+  );
   const [playing, setPlaying] = useState(settings.animations);
   const [tick, setTick] = useState(0);
 
@@ -105,23 +164,19 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
     return conus ? nexradFrames() : gpmFrames();
   }, [conus, tick]);
 
-  const maxNativeZoom = conus ? 8 : 6;
+  const urls = useMemo(
+    () =>
+      frames.map((frame) =>
+        conus ? nexradTileTemplate(frame.id) : gpmTileTemplate(frame.id),
+      ),
+    [frames, conus],
+  );
 
-  useEffect(() => {
-    if (!playing || frames.length < 2) return;
-    const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % frames.length);
-    }, conus ? 450 : 700);
-    return () => window.clearInterval(id);
-  }, [playing, frames.length, conus]);
+  const maxNativeZoom = conus ? 8 : 6;
+  const frameMs = conus ? 560 : 860;
 
   const safeIndex = Math.min(index, Math.max(0, frames.length - 1));
   const current = frames[safeIndex] ?? frames[frames.length - 1];
-  const url = current
-    ? conus
-      ? nexradTileTemplate(current.id)
-      : gpmTileTemplate(current.id)
-    : "";
   const stamp = current ? formatStamp(current.time) : "";
   const startStamp = frames[0] ? formatStamp(frames[0].time) : "";
   const endStamp = frames.at(-1) ? formatStamp(frames.at(-1)!.time) : "";
@@ -142,12 +197,22 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
           style={{ height: "100%", width: "100%" }}
           zoomControl
           attributionControl
+          fadeAnimation={false}
         >
           <TileLayer
             attribution="Tiles &copy; Esri"
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           />
-          {url && <RadarTiles url={url} maxNativeZoom={maxNativeZoom} />}
+          {urls.length > 0 && (
+            <RadarLoop
+              urls={urls}
+              index={safeIndex}
+              playing={playing}
+              frameMs={frameMs}
+              maxNativeZoom={maxNativeZoom}
+              onIndex={setIndex}
+            />
+          )}
           <Recenter lat={place.latitude} lon={place.longitude} />
           <InvalidateSize />
         </MapContainer>
