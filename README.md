@@ -32,7 +32,7 @@ GitHub Pages is a static host, so Clima only calls **no-key, CORS-friendly** API
 | [api.weather.gov](https://api.weather.gov) | US watches / warnings | None (User-Agent) | United States |
 | [Iowa State IEM](https://mesonet.agron.iastate.edu/) | HD NEXRAD reflectivity mosaic | None | CONUS |
 | [NASA GIBS / GPM IMERG](https://nasa.gov) | Global precipitation radar | None | Global |
-| [CARTO / OSM](https://carto.com) | Dark unlabeled basemap | None | Global |
+| [Esri Dark Gray](https://www.esri.com) | Dark unlabeled basemap | None | Global |
 
 Other free or free-tier APIs reviewed, **not wired** (key, CORS, or region limits):
 

@@ -17,8 +17,8 @@ export function PrivacyPage() {
       </p>
       <p>
         We do not run our own analytics, ads, or accounts. Third-party APIs (Open-Meteo, National
-        Weather Service, RainViewer, CARTO/OSM) may log standard request metadata according to their
-        own policies.
+        Weather Service, Iowa State NEXRAD, NASA GIBS, Esri) may log standard request metadata
+        according to their own policies.
       </p>
     </article>
   );
