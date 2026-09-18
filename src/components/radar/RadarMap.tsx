@@ -22,6 +22,22 @@ function Recenter({ lat, lon }: { lat: number; lon: number }) {
   return null;
 }
 
+function CityLabels() {
+  const map = useMap();
+  if (!map.getPane("labels")) {
+    const pane = map.createPane("labels");
+    pane.style.zIndex = "620";
+    pane.style.pointerEvents = "none";
+  }
+  return (
+    <TileLayer
+      pane="labels"
+      opacity={0.9}
+      url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+    />
+  );
+}
+
 function InvalidateSize() {
   const map = useMap();
   useEffect(() => {
@@ -200,12 +216,17 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
           style={{ height: "100%", width: "100%" }}
           zoomControl
           attributionControl
-          fadeAnimation={false}
+          zoomAnimation
+          fadeAnimation
+          zoomSnap={0.25}
+          zoomDelta={0.5}
+          wheelPxPerZoomLevel={80}
         >
           <TileLayer
             attribution="Tiles &copy; Esri"
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           />
+          <CityLabels />
           <CircleMarker
             center={[place.latitude, place.longitude]}
             radius={7}

@@ -70,11 +70,27 @@ input {
 }
 
 .radar-hd {
-  filter: saturate(1.35) contrast(1.12);
+  filter: saturate(1.2) contrast(1.06);
+}
+
+.leaflet-radar-base-pane {
+  z-index: 440;
+  filter: saturate(1.15) contrast(1.05);
 }
 
 .leaflet-radar-pane {
   z-index: 450;
+}
+
+.leaflet-labels-pane {
+  z-index: 620;
+}
+
+.leaflet-tile.radar-overlap {
+  width: 280px !important;
+  height: 280px !important;
+  margin-left: -12px !important;
+  margin-top: -12px !important;
 }
 
 .leaflet-radar-pane .leaflet-layer {
