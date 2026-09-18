@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { reverseGeocode } from "../api/geocoding";
+import { isGenericPlaceName } from "../lib/locality";
 import { loadWeather } from "../api/weather";
 import { generateBriefing } from "../ai/insights";
 import {
@@ -42,6 +43,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   useLocation: true,
   animations: true,
   theme: "system",
+  defaultPage: "weather",
 };
 
 interface AppState {
@@ -183,6 +185,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     writeJson("asked-location", true);
     requestLocation();
   }, [settings.useLocation, requestLocation]);
+
+  useEffect(() => {
+    if (!usingCurrentLocation || !isGenericPlaceName(place.name)) return;
+    void reverseGeocode(place.latitude, place.longitude).then((resolved) => {
+      if (!isGenericPlaceName(resolved.name)) setPlace(resolved, true, true);
+    });
+  }, [usingCurrentLocation, place.latitude, place.longitude, place.name, setPlace]);
 
   useEffect(() => {
     applyTheme(settings.theme ?? "system");

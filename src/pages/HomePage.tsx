@@ -1,6 +1,5 @@
 import { AirConditions } from "../components/weather/AirConditions";
 import { ConfidenceCard } from "../components/weather/ConfidenceCard";
-import { AiInsights } from "../components/weather/AiInsights";
 import { CurrentHero } from "../components/weather/CurrentHero";
 import { DailyForecast } from "../components/weather/DailyForecast";
 import { HourlyForecast } from "../components/weather/HourlyForecast";
@@ -31,7 +30,6 @@ function DesktopHome() {
         <HourlyForecast limit={6} />
         <AirConditions />
         <ConfidenceCard />
-        <AiInsights />
       </div>
       <DailyForecast />
     </div>
@@ -43,7 +41,6 @@ function MobileHome() {
     <div className="flex flex-col gap-4">
       <CurrentHero compact />
       <ConfidenceCard />
-      <AiInsights />
       <HourlyForecast limit={8} />
       <AirConditions />
       <DailyForecast />

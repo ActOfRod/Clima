@@ -151,9 +151,12 @@ export interface AiBriefing {
 
 export type ThemeId = "system" | "light" | "dark" | "sky" | "autumn" | "lavender";
 
+export type DefaultPage = "weather" | "local";
+
 export interface SettingsState {
   units: Units;
   useLocation: boolean;
   animations: boolean;
   theme: ThemeId;
+  defaultPage: DefaultPage;
 }

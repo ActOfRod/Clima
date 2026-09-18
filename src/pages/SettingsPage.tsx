@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { THEMES } from "../lib/theme";
-import type { ThemeId } from "../types";
+import type { DefaultPage, ThemeId } from "../types";
 
 export function SettingsPage() {
   const { settings, updateSettings, requestLocation, locating } = useApp();
@@ -29,6 +29,32 @@ export function SettingsPage() {
               selected={settings.theme === theme.id}
               onSelect={() => updateSettings({ theme: theme.id })}
             />
+          ))}
+        </div>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">DEFAULT PAGE</h2>
+        <p className="mt-1 text-sm text-muted">
+          Shown when you open Clima. You can still switch tabs anytime.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {([
+            { id: "weather" as DefaultPage, label: "Weather" },
+            { id: "local" as DefaultPage, label: "Clima AI" },
+          ]).map((page) => (
+            <button
+              key={page.id}
+              type="button"
+              onClick={() => updateSettings({ defaultPage: page.id })}
+              className={`rounded-2xl px-3 py-3 text-sm ${
+                (settings.defaultPage ?? "weather") === page.id
+                  ? "bg-accent text-on-accent"
+                  : "bg-soft"
+              }`}
+            >
+              {page.label}
+            </button>
           ))}
         </div>
       </section>
