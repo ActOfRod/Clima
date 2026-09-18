@@ -77,7 +77,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
-  const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
+  const [usingCurrentLocation, setUsingCurrentLocation] = useState(() =>
+    readJson<boolean>("using-current-location", false),
+  );
   const [tick, setTick] = useState(0);
   const [personal, setPersonal] = useState<PersonalModel>(() =>
     readJson<PersonalModel>("personal", DEFAULT_PERSONAL),
@@ -97,6 +99,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (next: Place, persist = true, fromCurrentLocation = false) => {
       setPlaceState(next);
       setUsingCurrentLocation(fromCurrentLocation);
+      writeJson("using-current-location", fromCurrentLocation);
       if (persist) writeJson("place", next);
     },
     [],

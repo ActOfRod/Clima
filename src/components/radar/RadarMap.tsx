@@ -186,6 +186,9 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
       className="flex flex-col overflow-hidden rounded-[28px] ring-1 ring-white/10"
       style={{ height }}
     >
+      <p className="sr-only">
+        Radar centered on {place.name} at {place.latitude.toFixed(3)}, {place.longitude.toFixed(3)}.
+      </p>
       <div className="relative" style={{ height: "calc(100% - 96px)" }}>
         <MapContainer
           key={conus ? "nexrad-hd" : "gpm-hd"}
