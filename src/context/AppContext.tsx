@@ -53,7 +53,7 @@ interface AppState {
   locating: boolean;
   usingCurrentLocation: boolean;
   personal: PersonalModel;
-  setPlace: (place: Place, persist?: boolean) => void;
+  setPlace: (place: Place, persist?: boolean, fromCurrentLocation?: boolean) => void;
   refresh: () => void;
   toggleSave: (place: Place) => void;
   isSaved: (id: string) => boolean;
@@ -93,11 +93,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [displayWeather, settings.units],
   );
 
-  const setPlace = useCallback((next: Place, persist = true) => {
-    setPlaceState(next);
-    setUsingCurrentLocation(false);
-    if (persist) writeJson("place", next);
-  }, []);
+  const setPlace = useCallback(
+    (next: Place, persist = true, fromCurrentLocation = false) => {
+      setPlaceState(next);
+      setUsingCurrentLocation(fromCurrentLocation);
+      if (persist) writeJson("place", next);
+    },
+    [],
+  );
 
   const updateSettings = useCallback((patch: Partial<SettingsState>) => {
     setSettings((prev) => {
@@ -142,11 +145,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const applyCoords = useCallback(
     async (lat: number, lon: number) => {
       const resolved = await reverseGeocode(lat, lon);
-      setPlaceState(resolved);
-      writeJson("place", resolved);
-      setUsingCurrentLocation(true);
+      setPlace(resolved, true, true);
     },
-    [],
+    [setPlace],
   );
 
   const requestLocation = useCallback(() => {

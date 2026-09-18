@@ -144,8 +144,22 @@ describe("generateBriefing", () => {
   });
 
   it("formats temperatures and wind for imperial", () => {
-    const result = generateBriefing(bundle(), "imperial");
+    const base = bundle();
+    const result = generateBriefing(
+      bundle({
+        current: {
+          ...base.current,
+          temperature: 31,
+          apparentTemperature: 25,
+          uvIndex: 2,
+          weatherCode: 2,
+        },
+      }),
+      "imperial",
+    );
+    expect(result.headline).toContain("88°");
     expect(result.summary).toContain("88°");
     expect(result.summary).toContain("mph");
+    expect(result.cards.some((c) => c.id === "feel" && c.body.includes("77°"))).toBe(true);
   });
 });
