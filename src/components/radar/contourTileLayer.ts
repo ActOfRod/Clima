@@ -161,13 +161,13 @@ class ContourTileLayer extends L.TileLayer {
 
     image.onload = () => {
       processToContour(image, canvas, this.contourOptions);
-      done(null, canvas);
+      done(undefined, canvas);
     };
 
     image.onerror = () => {
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      done(null, canvas);
+      done(undefined, canvas);
     };
 
     image.src = this.getTileUrl(coords);
