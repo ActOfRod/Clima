@@ -21,12 +21,12 @@ export function MapPage() {
       <SearchBar />
       <div>
         <h1 className="text-2xl font-semibold">Map</h1>
-        <p className="text-sm text-[#8b9cb3]">
+        <p className="text-sm text-muted">
           {place.name} · {place.latitude.toFixed(3)}, {place.longitude.toFixed(3)}
         </p>
       </div>
       <div
-        className="overflow-hidden rounded-[28px] ring-1 ring-white/10"
+        className="overflow-hidden rounded-[28px] ring-1 ring-line"
         style={{ height: desktop ? 280 : 200 }}
       >
         <MapContainer

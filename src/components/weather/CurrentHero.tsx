@@ -26,18 +26,18 @@ export function CurrentHero({ compact = false }: { compact?: boolean }) {
           <button
             type="button"
             onClick={() => toggleSave(weather.place)}
-            className="text-[#8b9cb3] hover:text-[#f6c445]"
+            className="text-muted hover:text-[#f6c445]"
             aria-label={saved ? "Unsave city" : "Save city"}
           >
             <Star size={18} fill={saved ? "#f6c445" : "none"} color={saved ? "#f6c445" : "currentColor"} />
           </button>
         </div>
-        <p className="mt-1 text-sm text-[#8b9cb3]">
+        <p className="mt-1 text-sm text-muted">
           Chance of rain: {Math.round(weather.current.rainChance)}%
           {weather.skill ? ` · ${weather.skill.label} confidence` : ""}
         </p>
         {usingCurrentLocation && (
-          <p className="mt-1 text-xs text-[#8b9cb3]">
+          <p className="mt-1 text-xs text-muted">
             Current location: {actualLocation || "Unknown"} ·{" "}
             {weather.place.latitude.toFixed(3)}, {weather.place.longitude.toFixed(3)}
           </p>
@@ -45,11 +45,11 @@ export function CurrentHero({ compact = false }: { compact?: boolean }) {
         <div className={`mt-5 font-semibold leading-none ${compact ? "text-6xl" : "text-7xl md:text-8xl"}`}>
           {formatTemp(weather.current.temperature, settings.units)}
         </div>
-        <p className="mt-3 text-sm text-[#8b9cb3]">{look.label}</p>
+        <p className="mt-3 text-sm text-muted">{look.label}</p>
         {weather.skill?.label !== "High" &&
           weather.skill?.rangeLow != null &&
           weather.skill?.rangeHigh != null && (
-            <p className="mt-1 text-sm text-[#f5c16c]">
+            <p className="mt-1 text-sm text-warn">
               Models spread{" "}
               {formatTemp(weather.skill.rangeLow, settings.units)}–
               {formatTemp(weather.skill.rangeHigh, settings.units)} over the next 12h

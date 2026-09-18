@@ -11,7 +11,7 @@ export function RadarPage() {
       <SearchBar />
       <div>
         <h1 className="text-2xl font-semibold">Radar</h1>
-        <p className="text-sm text-[#8b9cb3]">
+        <p className="text-sm text-muted">
           High-def radar around {place.name}. US uses NOAA NEXRAD; everywhere else uses NASA GPM
           — no logo tiles.
         </p>

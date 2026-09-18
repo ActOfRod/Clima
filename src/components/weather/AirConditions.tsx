@@ -34,13 +34,13 @@ export function AirConditions({ seeMore = true }: { seeMore?: boolean }) {
   return (
     <section className="card p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xs font-semibold tracking-[0.18em] text-[#8b9cb3]">
+        <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">
           AIR CONDITIONS
         </h2>
         {seeMore && (
           <Link
             to="/local"
-            className="rounded-full bg-[#3b9bff] px-3 py-1 text-xs font-semibold text-white"
+            className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-on-accent"
           >
             See more
           </Link>
@@ -49,9 +49,9 @@ export function AirConditions({ seeMore = true }: { seeMore?: boolean }) {
       <div className="grid grid-cols-2 gap-y-6">
         {items.map((item) => (
           <div key={item.label} className="flex gap-3">
-            <item.icon size={18} className="mt-1 text-[#8b9cb3]" />
+            <item.icon size={18} className="mt-1 text-muted" />
             <div>
-              <div className="text-sm text-[#8b9cb3]">{item.label}</div>
+              <div className="text-sm text-muted">{item.label}</div>
               <div className="text-2xl font-semibold">{item.value}</div>
             </div>
           </div>

@@ -14,7 +14,7 @@ export function CitiesPage() {
       <SearchBar />
       <div>
         <h1 className="text-2xl font-semibold">Cities</h1>
-        <p className="text-sm text-[#8b9cb3]">
+        <p className="text-sm text-muted">
           Star a city from search or the home screen to keep it here.
         </p>
       </div>
@@ -27,12 +27,12 @@ export function CitiesPage() {
               type="button"
               onClick={() => setPlace(city)}
               className={`card flex items-center justify-between p-5 text-left ${
-                active ? "ring-1 ring-[#3b9bff]" : ""
+                active ? "ring-1 ring-accent" : ""
               }`}
             >
               <div>
                 <div className="text-xl font-semibold">{city.name}</div>
-                <div className="text-sm text-[#8b9cb3]">
+                <div className="text-sm text-muted">
                   {placeLabel("", city.admin, city.country).replace(/^, /, "")}
                 </div>
                 {active && weather && (
