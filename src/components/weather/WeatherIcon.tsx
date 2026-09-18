@@ -6,20 +6,29 @@ interface Props {
   isDay?: boolean;
   size?: number;
   className?: string;
+  glow?: boolean;
 }
 
-export function WeatherIcon({ code, isDay = true, size = 64, className }: Props) {
+export function WeatherIcon({
+  code,
+  isDay = true,
+  size = 64,
+  className,
+  glow = false,
+}: Props) {
   const look = weatherLook(code, isDay);
   const id = useId().replace(/:/g, "");
   const style: CSSProperties = { width: size, height: size, overflow: "visible" };
+  const showGlow = glow && look.kind === "sun";
   return (
     <svg
       viewBox="0 0 64 64"
       style={style}
-      className={`weather-icon ${className ?? ""}`}
+      className={`weather-icon ${showGlow ? "weather-icon-glow" : ""} ${className ?? ""}`}
       aria-hidden
     >
       <Defs id={id} />
+      {showGlow && <GoldenGlow id={id} />}
       {look.kind === "sun" && <Sun id={id} />}
       {look.kind === "night" && <Moon id={id} />}
       {look.kind === "partly" && (
@@ -108,7 +117,21 @@ function Defs({ id }: { id: string }) {
       <filter id={`${id}-pop`} x="-35%" y="-35%" width="170%" height="180%">
         <feDropShadow dx="0" dy="2.4" stdDeviation="1.6" floodColor="#102033" floodOpacity="0.38" />
       </filter>
+      <radialGradient id={`${id}-halo`} cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0%" stopColor="#FFE08A" stopOpacity="0.55" />
+        <stop offset="45%" stopColor="#F6C445" stopOpacity="0.22" />
+        <stop offset="100%" stopColor="#F6C445" stopOpacity="0" />
+      </radialGradient>
     </defs>
+  );
+}
+
+function GoldenGlow({ id }: { id: string }) {
+  return (
+    <g className="wx-sun-halo" style={{ transformOrigin: "32px 32px" }}>
+      <circle cx="32" cy="32" r="30" fill={`url(#${id}-halo)`} />
+      <ellipse className="wx-sun-shimmer" cx="24" cy="22" rx="10" ry="6" fill="#fff" opacity="0.18" />
+    </g>
   );
 }
 
