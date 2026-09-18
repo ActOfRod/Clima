@@ -37,7 +37,7 @@ const DEFAULT_PLACE: Place = {
 };
 
 const DEFAULT_SETTINGS: SettingsState = {
-  units: "metric",
+  units: "imperial",
   useLocation: true,
   animations: true,
 };
@@ -51,6 +51,7 @@ interface AppState {
   loading: boolean;
   error: string | null;
   locating: boolean;
+  usingCurrentLocation: boolean;
   personal: PersonalModel;
   setPlace: (place: Place, persist?: boolean) => void;
   refresh: () => void;
@@ -76,6 +77,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
   const [tick, setTick] = useState(0);
   const [personal, setPersonal] = useState<PersonalModel>(() =>
     readJson<PersonalModel>("personal", DEFAULT_PERSONAL),
@@ -87,12 +89,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const briefing = useMemo(
-    () => (displayWeather ? generateBriefing(displayWeather) : null),
-    [displayWeather],
+    () => (displayWeather ? generateBriefing(displayWeather, settings.units) : null),
+    [displayWeather, settings.units],
   );
 
   const setPlace = useCallback((next: Place, persist = true) => {
     setPlaceState(next);
+    setUsingCurrentLocation(false);
     if (persist) writeJson("place", next);
   }, []);
 
@@ -139,9 +142,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const applyCoords = useCallback(
     async (lat: number, lon: number) => {
       const resolved = await reverseGeocode(lat, lon);
-      setPlace(resolved);
+      setPlaceState(resolved);
+      writeJson("place", resolved);
+      setUsingCurrentLocation(true);
     },
-    [setPlace],
+    [],
   );
 
   const requestLocation = useCallback(() => {
@@ -203,6 +208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       locating,
+      usingCurrentLocation,
       personal,
       setPlace,
       refresh: () => setTick((n) => n + 1),
@@ -222,6 +228,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       locating,
+      usingCurrentLocation,
       personal,
       setPlace,
       toggleSave,

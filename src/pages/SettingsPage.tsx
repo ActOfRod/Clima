@@ -56,6 +56,17 @@ export function SettingsPage() {
         </div>
       </section>
 
+      <section className="card space-y-3 p-5">
+        <h2 className="text-xs font-semibold tracking-[0.18em] text-[#8b9cb3]">CITIES</h2>
+        <p className="text-sm text-[#8b9cb3]">Manage your starred cities from one place.</p>
+        <Link
+          className="inline-flex rounded-2xl bg-white/5 px-4 py-3 text-sm text-white"
+          to="/cities"
+        >
+          Open cities
+        </Link>
+      </section>
+
       <section className="card space-y-3 p-5 text-sm text-[#c5d0e0]">
         <h2 className="text-xs font-semibold tracking-[0.18em] text-[#8b9cb3]">
           FREE DATA SOURCES

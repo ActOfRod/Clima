@@ -142,4 +142,10 @@ describe("generateBriefing", () => {
     expect(result.cards[0].id).toBe("alert");
     expect(result.cards[0].title).toBe("Heat Advisory");
   });
+
+  it("formats temperatures and wind for imperial", () => {
+    const result = generateBriefing(bundle(), "imperial");
+    expect(result.headline).toContain("88°");
+    expect(result.summary).toContain("mph");
+  });
 });
