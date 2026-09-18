@@ -7,8 +7,8 @@ export const NAV: Array<{
   label: string;
   icon: typeof CloudSun;
 }> = [
-  { id: "home", to: "/", label: "Weather", icon: CloudSun },
-  { id: "local", to: "/local", label: "Local", icon: Sparkles },
+  { id: "home", to: "/weather", label: "Weather", icon: CloudSun },
+  { id: "local", to: "/local", label: "Clima AI", icon: Sparkles },
   { id: "radar", to: "/radar", label: "Radar", icon: Layers },
   { id: "settings", to: "/settings", label: "Settings", icon: Settings },
 ];

@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { useApp } from "../../context/AppContext";
+import { localityLine } from "../../lib/locality";
 import { weatherLook } from "../../lib/weatherCodes";
 import { formatTemp } from "../../lib/units";
 import { WeatherIcon } from "./WeatherIcon";
@@ -9,7 +10,7 @@ export function CurrentHero({ compact = false }: { compact?: boolean }) {
   if (!weather) return null;
   const look = weatherLook(weather.current.weatherCode, weather.current.isDay);
   const saved = isSaved(weather.place.id);
-  const locality = [weather.place.name, weather.place.admin].filter(Boolean).join(" - ");
+  const locality = localityLine(weather.place);
 
   return (
     <div className={`flex items-center justify-between gap-4 ${compact ? "px-1" : "px-2 pt-2"}`}>
@@ -27,7 +28,7 @@ export function CurrentHero({ compact = false }: { compact?: boolean }) {
             <Star size={18} fill={saved ? "#f6c445" : "none"} color={saved ? "#f6c445" : "currentColor"} />
           </button>
         </div>
-        {usingCurrentLocation && (
+        {usingCurrentLocation && locality && (
           <p className="mt-1 text-sm text-muted">({locality})</p>
         )}
         <p className="mt-1 text-sm text-muted">
