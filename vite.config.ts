@@ -12,22 +12,31 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      includeAssets: [
+        "favicon.svg",
+        "favicon-32.png",
+        "apple-touch-icon.png",
+        "pwa-192.png",
+        "pwa-512.png",
+      ],
       manifest: {
         name: "Clima",
         short_name: "Clima",
         description: "AI-powered weather, radar, and local forecasts.",
-        theme_color: "#0b1220",
-        background_color: "#0b1220",
+        theme_color: "#6d6cf8",
+        background_color: "#6d6cf8",
         display: "standalone",
         orientation: "portrait",
         start_url: "./",
         scope: "./",
+        lang: "en",
+        categories: ["weather", "utilities"],
         icons: [
           {
             src: "pwa-192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
           {
             src: "pwa-512.png",

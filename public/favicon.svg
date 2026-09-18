@@ -1,6 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#152033"/>
-  <path d="M12 40c6-2 10-8 20-8 8 0 12 4 20 4" fill="none" stroke="#7EC8FF" stroke-width="4" stroke-linecap="round"/>
-  <path d="M16 28c5-2 8-6 14-6 7 0 10 3 18 3" fill="none" stroke="#3B9BFF" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="44" cy="18" r="7" fill="#F8D15C"/>
+  <defs>
+    <linearGradient id="g" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#6d6cf8"/>
+      <stop offset="100%" stop-color="#56bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#g)"/>
+  <ellipse cx="28" cy="30" rx="11" ry="9" fill="#fff"/>
+  <ellipse cx="38" cy="31" rx="10" ry="8.5" fill="#fff"/>
+  <ellipse cx="33" cy="34" rx="14" ry="8" fill="#fff"/>
+  <path d="M31 38 L27 48 L33 46 L30 54 L41 42 L34 44 Z" fill="#F6C445"/>
 </svg>
