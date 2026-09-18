@@ -37,7 +37,7 @@ const DEFAULT_PLACE: Place = {
 };
 
 const DEFAULT_SETTINGS: SettingsState = {
-  units: "metric",
+  units: "imperial",
   useLocation: true,
   animations: true,
 };
@@ -51,8 +51,9 @@ interface AppState {
   loading: boolean;
   error: string | null;
   locating: boolean;
+  usingCurrentLocation: boolean;
   personal: PersonalModel;
-  setPlace: (place: Place, persist?: boolean) => void;
+  setPlace: (place: Place, persist?: boolean, fromCurrentLocation?: boolean) => void;
   refresh: () => void;
   toggleSave: (place: Place) => void;
   isSaved: (id: string) => boolean;
@@ -76,6 +77,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [usingCurrentLocation, setUsingCurrentLocation] = useState(() =>
+    readJson<boolean>("using-current-location", false),
+  );
   const [tick, setTick] = useState(0);
   const [personal, setPersonal] = useState<PersonalModel>(() =>
     readJson<PersonalModel>("personal", DEFAULT_PERSONAL),
@@ -87,14 +91,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const briefing = useMemo(
-    () => (displayWeather ? generateBriefing(displayWeather) : null),
-    [displayWeather],
+    () => (displayWeather ? generateBriefing(displayWeather, settings.units) : null),
+    [displayWeather, settings.units],
   );
 
-  const setPlace = useCallback((next: Place, persist = true) => {
-    setPlaceState(next);
-    if (persist) writeJson("place", next);
-  }, []);
+  const setPlace = useCallback(
+    (next: Place, persist = true, fromCurrentLocation = false) => {
+      setPlaceState(next);
+      setUsingCurrentLocation(fromCurrentLocation);
+      writeJson("using-current-location", fromCurrentLocation);
+      if (persist) writeJson("place", next);
+    },
+    [],
+  );
 
   const updateSettings = useCallback((patch: Partial<SettingsState>) => {
     setSettings((prev) => {
@@ -139,7 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const applyCoords = useCallback(
     async (lat: number, lon: number) => {
       const resolved = await reverseGeocode(lat, lon);
-      setPlace(resolved);
+      setPlace(resolved, true, true);
     },
     [setPlace],
   );
@@ -203,6 +212,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       locating,
+      usingCurrentLocation,
       personal,
       setPlace,
       refresh: () => setTick((n) => n + 1),
@@ -222,6 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       locating,
+      usingCurrentLocation,
       personal,
       setPlace,
       toggleSave,

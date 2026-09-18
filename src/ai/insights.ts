@@ -1,14 +1,16 @@
 import { weatherLook, isSnowCode, isWetCode } from "../lib/weatherCodes";
 import { uvLabel } from "../lib/format";
+import { formatTemp, formatWind } from "../lib/units";
 import type {
   ActivityScore,
   AiBriefing,
   HourPoint,
   InsightCard,
+  Units,
   WeatherBundle,
 } from "../types";
 
-export function generateBriefing(bundle: WeatherBundle): AiBriefing {
+export function generateBriefing(bundle: WeatherBundle, units: Units = "metric"): AiBriefing {
   const { current, hourly, daily, air, alerts, place } = bundle;
   const look = weatherLook(current.weatherCode, current.isDay);
   const nextHours = hourly.slice(0, 12);
@@ -85,8 +87,8 @@ export function generateBriefing(bundle: WeatherBundle): AiBriefing {
       id: "feel",
       title: hotter ? "Feels warmer than the number" : "Feels cooler than the number",
       body: hotter
-        ? `Humidity is pushing the feel to ${Math.round(current.apparentTemperature)}° versus ${Math.round(current.temperature)}° air temp.`
-        : `Wind is knocking the feel down to ${Math.round(current.apparentTemperature)}° from ${Math.round(current.temperature)}°.`,
+        ? `Humidity is pushing the feel to ${formatTemp(current.apparentTemperature, units)} versus ${formatTemp(current.temperature, units)} air temp.`
+        : `Wind is knocking the feel down to ${formatTemp(current.apparentTemperature, units)} from ${formatTemp(current.temperature, units)}.`,
       tone: "calm",
     });
   }
@@ -95,18 +97,19 @@ export function generateBriefing(bundle: WeatherBundle): AiBriefing {
     ? daily[1].tempMax - daily[0].tempMax
     : 0;
   if (Math.abs(trend) >= 4) {
+    const spread = units === "imperial" ? Math.round(Math.abs(trend) * 1.8) : Math.abs(Math.round(trend));
     cards.push({
       id: "trend",
       title: trend > 0 ? "Warming tomorrow" : "Cooling tomorrow",
-      body: `Highs swing ${Math.abs(Math.round(trend))}° ${trend > 0 ? "up" : "down"} tomorrow versus today.`,
+      body: `Highs swing ${spread}° ${trend > 0 ? "up" : "down"} tomorrow versus today.`,
       tone: "calm",
     });
   }
 
   const clothing = clothingAdvice(current, nextHours);
   const activities = scoreActivities(bundle, dryHours.length);
-  const headline = buildHeadline(look.label, current, rainSoon);
-  const summary = buildSummary(place.name, current, look.label, rainSoon, best);
+  const headline = buildHeadline(look.label, current, rainSoon, units);
+  const summary = buildSummary(place.name, current, look.label, rainSoon, best, units);
 
   return {
     headline,
@@ -122,6 +125,7 @@ function buildHeadline(
   label: string,
   current: WeatherBundle["current"],
   rainSoon?: HourPoint,
+  units: Units = "metric",
 ): string {
   if (rainSoon && rainSoon.rainChance >= 70) return "Stay flexible — rain is nearby";
   if (isSnowCode(current.weatherCode)) return "Winter pattern in play";
@@ -129,7 +133,7 @@ function buildHeadline(
   if (current.isDay && current.uvIndex >= 7 && current.rainChance < 20) {
     return "Bright, high-sun day";
   }
-  return `${label} and ${Math.round(current.temperature)}° right now`;
+  return `${label} and ${formatTemp(current.temperature, units)} right now`;
 }
 
 function buildSummary(
@@ -138,16 +142,18 @@ function buildSummary(
   label: string,
   rainSoon: HourPoint | undefined,
   best: string | null,
+  units: Units,
 ): string {
-  const feel = Math.round(current.apparentTemperature);
-  const air = Math.round(current.temperature);
+  const feel = formatTemp(current.apparentTemperature, units);
+  const air = formatTemp(current.temperature, units);
+  const wind = formatWind(current.windSpeed, units);
   const rainBit = rainSoon
     ? ` Expect wetter weather later (${rainSoon.rainChance}% chance).`
     : current.rainChance < 20
       ? " Rain risk stays low."
       : ` Rain chance is ${Math.round(current.rainChance)}%.`;
   const windowBit = best ? ` Best outdoor window: ${best}.` : "";
-  return `${city} is ${label.toLowerCase()} with air at ${air}° that feels like ${feel}°. Wind ${Math.round(current.windSpeed)} km/h.${rainBit}${windowBit}`;
+  return `${city} is ${label.toLowerCase()} with air at ${air} that feels like ${feel}. Wind ${wind}.${rainBit}${windowBit}`;
 }
 
 function clothingAdvice(

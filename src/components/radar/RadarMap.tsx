@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from "react-leaflet";
 import { Pause, Play } from "lucide-react";
 import { gpmFrames, gpmTileTemplate } from "../../api/gpm";
 import { nexradFrames, nexradTileTemplate } from "../../api/nexrad";
@@ -186,6 +186,9 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
       className="flex flex-col overflow-hidden rounded-[28px] ring-1 ring-white/10"
       style={{ height }}
     >
+      <p className="sr-only">
+        Radar centered on {place.name} at {place.latitude.toFixed(3)}, {place.longitude.toFixed(3)}.
+      </p>
       <div className="relative" style={{ height: "calc(100% - 96px)" }}>
         <MapContainer
           key={conus ? "nexrad-hd" : "gpm-hd"}
@@ -203,6 +206,20 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
             attribution="Tiles &copy; Esri"
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           />
+          <CircleMarker
+            center={[place.latitude, place.longitude]}
+            radius={7}
+            pathOptions={{
+              color: "#d8ecff",
+              weight: 2,
+              fillColor: "#3b9bff",
+              fillOpacity: 0.95,
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -8]} opacity={0.95} permanent>
+              {place.name}
+            </Tooltip>
+          </CircleMarker>
           {urls.length > 0 && (
             <RadarLoop
               urls={urls}

@@ -47,7 +47,10 @@ function MobileShell() {
         <Outlet />
       </main>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/5 bg-[#121c2e]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto grid max-w-lg grid-cols-6">
+        <div
+          className="mx-auto grid max-w-lg"
+          style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}
+        >
           {NAV.map((item) => (
             <NavLink
               key={item.id}

@@ -1,6 +1,6 @@
 export type Units = "metric" | "imperial";
 
-export type RouteId = "home" | "local" | "radar" | "cities" | "map" | "settings";
+export type RouteId = "home" | "local" | "radar" | "cities" | "settings";
 
 export interface Place {
   id: string;
