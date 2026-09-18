@@ -35,8 +35,8 @@ export function SearchBar() {
 
   return (
     <div ref={box} className="relative">
-      <div className="flex items-center gap-3 rounded-2xl bg-[#10192a] px-4 py-3 ring-1 ring-white/5">
-        <Search size={16} className="text-[#8b9cb3]" />
+      <div className="flex items-center gap-3 rounded-2xl bg-panel-2 px-4 py-3 ring-1 ring-line">
+        <Search size={16} className="text-muted" />
         <input
           value={q}
           onChange={(e) => {
@@ -45,24 +45,24 @@ export function SearchBar() {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search for cities"
-          className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#6f8096]"
+          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
         />
         <button
           type="button"
           onClick={requestLocation}
-          className="rounded-lg p-1 text-[#8b9cb3] hover:text-white"
+          className="rounded-lg p-1 text-muted hover:text-ink"
           title="Use my location"
         >
           <MapPin size={16} className={locating ? "animate-pulse" : ""} />
         </button>
       </div>
       {open && hits.length > 0 && (
-        <ul className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl bg-[#152033] ring-1 ring-white/10">
+        <ul className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl bg-panel ring-1 ring-line">
           {hits.map((hit) => (
             <li key={hit.id}>
               <button
                 type="button"
-                className="block w-full px-4 py-3 text-left text-sm hover:bg-white/5"
+                className="block w-full px-4 py-3 text-left text-sm hover:bg-soft"
                 onClick={() => {
                   setPlace(hit);
                   setQ("");
@@ -71,7 +71,7 @@ export function SearchBar() {
                 }}
               >
                 <div className="font-medium">{hit.name}</div>
-                <div className="text-xs text-[#8b9cb3]">
+                <div className="text-xs text-muted">
                   {placeLabel("", hit.admin, hit.country).replace(/^, /, "")}
                 </div>
               </button>

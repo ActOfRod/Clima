@@ -10,7 +10,7 @@ export function HourlyForecast({ limit = 6 }: { limit?: number }) {
 
   return (
     <section className="card p-5">
-      <h2 className="mb-4 text-xs font-semibold tracking-[0.18em] text-[#8b9cb3]">
+      <h2 className="mb-4 text-xs font-semibold tracking-[0.18em] text-muted">
         TODAY&apos;S FORECAST
       </h2>
       <div className="soft-scroll flex gap-0 overflow-x-auto">
@@ -18,10 +18,10 @@ export function HourlyForecast({ limit = 6 }: { limit?: number }) {
           <div
             key={h.time}
             className={`flex min-w-[92px] flex-1 flex-col items-center gap-3 px-2 ${
-              i < hours.length - 1 ? "border-r border-white/10" : ""
+              i < hours.length - 1 ? "border-r border-line" : ""
             }`}
           >
-            <div className="text-xs text-[#8b9cb3]">
+            <div className="text-xs text-muted">
               {formatHour(h.time, weather.place.timezone)}
             </div>
             <WeatherIcon code={h.weatherCode} isDay={h.isDay} size={42} />

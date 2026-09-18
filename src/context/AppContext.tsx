@@ -17,6 +17,7 @@ import {
   canFeedback,
   type FeedbackKind,
 } from "../lib/personalModel";
+import { applyTheme } from "../lib/theme";
 import { readJson, writeJson } from "../lib/storage";
 import type {
   AiBriefing,
@@ -40,6 +41,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   units: "imperial",
   useLocation: true,
   animations: true,
+  theme: "system",
 };
 
 interface AppState {
@@ -70,9 +72,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     readJson<Place>("place", DEFAULT_PLACE),
   );
   const [saved, setSaved] = useState<Place[]>(() => readJson<Place[]>("saved", []));
-  const [settings, setSettings] = useState<SettingsState>(() =>
-    readJson<SettingsState>("settings", DEFAULT_SETTINGS),
-  );
+  const [settings, setSettings] = useState<SettingsState>(() => {
+    const stored = readJson<Partial<SettingsState>>("settings", {});
+    return { ...DEFAULT_SETTINGS, ...stored };
+  });
   const [weather, setWeather] = useState<WeatherBundle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -180,6 +183,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     writeJson("asked-location", true);
     requestLocation();
   }, [settings.useLocation, requestLocation]);
+
+  useEffect(() => {
+    applyTheme(settings.theme ?? "system");
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    const onChange = () => applyTheme(settings.theme ?? "system");
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [settings.theme]);
 
   useEffect(() => {
     let cancelled = false;

@@ -15,10 +15,10 @@ export function FeedbackBar() {
 
   return (
     <section className="card p-5">
-      <h2 className="text-xs font-semibold tracking-[0.18em] text-[#8b9cb3]">
+      <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">
         TEACH CLIMA
       </h2>
-      <p className="mt-2 text-sm text-[#c5d0e0]">
+      <p className="mt-2 text-sm text-muted">
         Other apps lock in one model. If this forecast was off for you, say so — Clima
         learns on this device and stops trusting a single number.
       </p>
@@ -29,13 +29,13 @@ export function FeedbackBar() {
             type="button"
             disabled={!enabled}
             onClick={() => recordFeedback(opt.id)}
-            className="rounded-full bg-white/5 px-3 py-2 text-xs disabled:opacity-40"
+            className="rounded-full bg-soft px-3 py-2 text-xs disabled:opacity-40"
           >
             {opt.label}
           </button>
         ))}
       </div>
-      <p className="mt-3 text-[11px] text-[#8b9cb3]">
+      <p className="mt-3 text-[11px] text-muted">
         {personal.samples === 0
           ? "No local corrections yet."
           : `${personal.samples} note${personal.samples === 1 ? "" : "s"} saved on this device.`}

@@ -1,7 +1,7 @@
 export function PrivacyPage() {
   return (
-    <article className="card mx-auto max-w-2xl space-y-4 p-6 text-sm leading-relaxed text-[#c5d0e0]">
-      <h1 className="text-2xl font-semibold text-white">Privacy</h1>
+    <article className="card mx-auto max-w-2xl space-y-4 p-6 text-sm leading-relaxed text-muted">
+      <h1 className="text-2xl font-semibold text-ink">Privacy</h1>
       <p>
         Clima is a client-side weather app. Forecasts, air quality, geocoding, radar, and US
         alerts are requested directly from public weather APIs by your device.

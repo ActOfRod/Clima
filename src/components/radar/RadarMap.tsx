@@ -199,7 +199,7 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
 
   return (
     <div
-      className="flex flex-col overflow-hidden rounded-[28px] ring-1 ring-white/10"
+      className="flex flex-col overflow-hidden rounded-[28px] ring-1 ring-line"
       style={{ height }}
     >
       <p className="sr-only">
@@ -255,12 +255,12 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
           <InvalidateSize />
         </MapContainer>
       </div>
-      <div className="relative z-20 shrink-0 bg-[#10192a] px-4 py-3">
+      <div className="relative z-20 shrink-0 bg-panel-2 px-4 py-3">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setPlaying((p) => !p)}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#3b9bff] text-white"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-on-accent"
             aria-label={playing ? "Pause radar" : "Play radar"}
           >
             {playing ? <Pause size={18} /> : <Play size={18} />}
@@ -279,14 +279,14 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
               className="radar-scrub"
               aria-label="Radar time"
             />
-            <div className="mt-1.5 flex items-center justify-between text-[11px] text-[#8b9cb3]">
+            <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted">
               <span>{startStamp}</span>
               <span className="font-medium text-white">{stamp}</span>
               <span>{endStamp}</span>
             </div>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between text-[10px] text-[#8b9cb3]">
+        <div className="mt-2 flex items-center justify-between text-[10px] text-muted">
           <span>
             {conus
               ? "HD NOAA NEXRAD (Iowa State)"

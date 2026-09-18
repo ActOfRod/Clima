@@ -149,8 +149,11 @@ export interface AiBriefing {
   activities: ActivityScore[];
 }
 
+export type ThemeId = "system" | "light" | "dark" | "sky" | "autumn" | "lavender";
+
 export interface SettingsState {
   units: Units;
   useLocation: boolean;
   animations: boolean;
+  theme: ThemeId;
 }

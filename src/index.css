@@ -1,17 +1,124 @@
 @import "tailwindcss";
 
-:root {
+@theme inline {
+  --color-surface: var(--bg);
+  --color-shell: var(--shell);
+  --color-nav: var(--nav);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-alert: var(--alert);
+  --color-on-accent: var(--on-accent);
+}
+
+:root,
+html[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0b1220;
+  --shell: #0e1728;
+  --nav: #121c2e;
   --panel: #152033;
   --panel-2: #1b2a40;
-  --line: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.1);
+  --soft: rgba(255, 255, 255, 0.07);
   --muted: #8b9cb3;
   --text: #f4f7fb;
   --accent: #3b9bff;
+  --on-accent: #ffffff;
   --good: #3dd6c6;
   --warn: #f5c16c;
   --alert: #ff7b7b;
+  --glow-a: rgba(59, 155, 255, 0.1);
+  --glow-b: rgba(255, 196, 80, 0.05);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eef3f9;
+  --shell: #ffffff;
+  --nav: #f4f7fb;
+  --panel: #ffffff;
+  --panel-2: #e8eef6;
+  --line: rgba(20, 36, 58, 0.1);
+  --soft: rgba(20, 36, 58, 0.06);
+  --muted: #5d6f86;
+  --text: #152033;
+  --accent: #2b7fff;
+  --on-accent: #ffffff;
+  --good: #0f9d8a;
+  --warn: #c4841d;
+  --alert: #d64545;
+  --glow-a: rgba(43, 127, 255, 0.12);
+  --glow-b: rgba(255, 180, 90, 0.08);
+}
+
+html[data-theme="sky"] {
+  color-scheme: light;
+  --bg: #8ec8f4;
+  --shell: #f4fbff;
+  --nav: #dff1fc;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-2: rgba(210, 236, 252, 0.9);
+  --line: rgba(30, 90, 140, 0.12);
+  --soft: rgba(255, 255, 255, 0.45);
+  --muted: #3f6f94;
+  --text: #16324f;
+  --accent: #2b8adf;
+  --on-accent: #ffffff;
+  --good: #1aa38a;
+  --warn: #d08a1f;
+  --alert: #d4525a;
+  --glow-a: rgba(255, 255, 255, 0.35);
+  --glow-b: rgba(90, 170, 230, 0.2);
+}
+
+html[data-theme="autumn"] {
+  color-scheme: light;
+  --bg: #f3a49c;
+  --shell: #fff6f2;
+  --nav: #ffece6;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-2: rgba(255, 224, 214, 0.9);
+  --line: rgba(140, 50, 50, 0.12);
+  --soft: rgba(255, 255, 255, 0.42);
+  --muted: #8a4a44;
+  --text: #5a2430;
+  --accent: #e56b5e;
+  --on-accent: #ffffff;
+  --good: #2a9a78;
+  --warn: #c86b1c;
+  --alert: #c43b3b;
+  --glow-a: rgba(255, 255, 255, 0.32);
+  --glow-b: rgba(255, 170, 120, 0.25);
+}
+
+html[data-theme="lavender"] {
+  color-scheme: light;
+  --bg: #9b7ed4;
+  --shell: #f7f1ff;
+  --nav: #ece3fb;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-2: rgba(232, 220, 252, 0.9);
+  --line: rgba(70, 40, 120, 0.14);
+  --soft: rgba(255, 255, 255, 0.42);
+  --muted: #6a5594;
+  --text: #2f2158;
+  --accent: #7a5ad6;
+  --on-accent: #ffffff;
+  --good: #2aa38a;
+  --warn: #d08a1f;
+  --alert: #d4527a;
+  --glow-a: rgba(255, 255, 255, 0.3);
+  --glow-b: rgba(160, 120, 230, 0.22);
+}
+
+:root {
   font-family: Outfit, ui-sans-serif, system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -30,9 +137,10 @@ body,
 
 body {
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(59, 155, 255, 0.08), transparent 50%),
-    radial-gradient(900px 500px at 100% 0%, rgba(255, 196, 80, 0.05), transparent 40%),
+    radial-gradient(1200px 600px at 10% -10%, var(--glow-a), transparent 50%),
+    radial-gradient(900px 500px at 100% 0%, var(--glow-b), transparent 40%),
     var(--bg);
+  color: var(--text);
 }
 
 button,
@@ -97,13 +205,18 @@ input {
   will-change: opacity;
 }
 
+.weather-icon {
+  filter: drop-shadow(0 8px 10px rgba(15, 23, 42, 0.28));
+  overflow: visible;
+}
+
 .radar-scrub {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #1b2a40, #3b9bff);
+  background: linear-gradient(90deg, var(--panel-2), var(--accent));
   outline: none;
 }
 
@@ -114,7 +227,7 @@ input {
   height: 22px;
   border-radius: 50%;
   background: #fff;
-  border: 3px solid #3b9bff;
+  border: 3px solid var(--accent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   cursor: grab;
 }
@@ -124,7 +237,7 @@ input {
   height: 22px;
   border-radius: 50%;
   background: #fff;
-  border: 3px solid #3b9bff;
+  border: 3px solid var(--accent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   cursor: grab;
 }
@@ -132,7 +245,7 @@ input {
 .radar-scrub::-moz-range-track {
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #1b2a40, #3b9bff);
+  background: linear-gradient(90deg, var(--panel-2), var(--accent));
 }
 
 @keyframes wx-float {

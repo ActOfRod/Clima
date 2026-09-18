@@ -80,25 +80,25 @@ export function LocalPage() {
       <AiInsights />
       {weather.alerts.length > 0 && (
         <section className="card space-y-3 p-5">
-          <h2 className="text-xs font-semibold tracking-[0.18em] text-[#ff7b7b]">
+          <h2 className="text-xs font-semibold tracking-[0.18em] text-alert">
             NWS ALERTS
           </h2>
           {weather.alerts.map((a) => (
             <div key={a.id} className="rounded-2xl bg-rose-400/10 p-3">
               <div className="font-medium">{a.event}</div>
-              <p className="mt-1 text-sm text-[#c5d0e0]">{a.headline}</p>
+              <p className="mt-1 text-sm text-muted">{a.headline}</p>
             </div>
           ))}
         </section>
       )}
       <section className="card p-5">
-        <h2 className="mb-4 text-xs font-semibold tracking-[0.18em] text-[#8b9cb3]">
+        <h2 className="mb-4 text-xs font-semibold tracking-[0.18em] text-muted">
           LOCAL DETAILS
         </h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl bg-white/5 p-4">
-              <div className="flex items-center gap-2 text-xs text-[#8b9cb3]">
+            <div key={s.label} className="rounded-2xl bg-soft p-4">
+              <div className="flex items-center gap-2 text-xs text-muted">
                 <s.icon size={14} />
                 {s.label}
               </div>
@@ -125,8 +125,8 @@ export function LocalPage() {
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-white/5 p-4">
-      <div className="text-xs text-[#8b9cb3]">{label}</div>
+    <div className="rounded-2xl bg-soft p-4">
+      <div className="text-xs text-muted">{label}</div>
       <div className="mt-1 text-lg font-semibold">{value}</div>
     </div>
   );
