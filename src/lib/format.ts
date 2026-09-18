@@ -7,17 +7,31 @@ export function formatHour(iso: string, tz?: string): string {
   }).format(date);
 }
 
+export function calendarDate(iso: string, tz?: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+}
+
+function addDays(ymd: string, days: number): string {
+  const next = new Date(`${ymd}T12:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().slice(0, 10);
+}
+
 export function formatWeekday(iso: string, tz?: string, todayIso?: string): string {
-  const date = new Date(iso);
-  const today = todayIso ? new Date(todayIso) : new Date();
-  if (date.toDateString() === today.toDateString()) return "Today";
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+  const day = calendarDate(iso, tz);
+  const today = calendarDate(todayIso ?? new Date().toISOString(), tz);
+  if (day === today) return "Today";
+  if (day === addDays(today, 1)) return "Tomorrow";
   return new Intl.DateTimeFormat(undefined, {
     weekday: "short",
-    timeZone: tz,
-  }).format(date);
+    timeZone: "UTC",
+  }).format(new Date(`${day}T12:00:00Z`));
 }
 
 export function formatClock(iso: string, tz?: string): string {

@@ -1,4 +1,5 @@
 import type { AirQuality, CurrentWeather, DayPoint, HourPoint, Place } from "../types";
+import { calendarDate } from "../lib/format";
 import { weatherLook } from "../lib/weatherCodes";
 import { getJson } from "./client";
 
@@ -133,19 +134,23 @@ export async function fetchForecast(place: Place): Promise<{
     .filter((h) => new Date(h.time).getTime() >= now - 60 * 60 * 1000)
     .slice(0, 48);
 
-  const daily: DayPoint[] = data.daily.time.map((date, i) => ({
-    date,
-    weatherCode: data.daily!.weather_code[i],
-    tempMax: data.daily!.temperature_2m_max[i],
-    tempMin: data.daily!.temperature_2m_min[i],
-    sunrise: data.daily!.sunrise[i],
-    sunset: data.daily!.sunset[i],
-    uvIndexMax: data.daily!.uv_index_max[i] ?? 0,
-    precipitation: data.daily!.precipitation_sum[i],
-    rainChance: data.daily!.precipitation_probability_max[i] ?? 0,
-    windSpeedMax: data.daily!.wind_speed_10m_max[i],
-    summary: weatherLook(data.daily!.weather_code[i]).label,
-  }));
+  const today = calendarDate(data.current.time, data.timezone);
+  const daily: DayPoint[] = data.daily.time
+    .map((date, i) => ({
+      date,
+      weatherCode: data.daily!.weather_code[i],
+      tempMax: data.daily!.temperature_2m_max[i],
+      tempMin: data.daily!.temperature_2m_min[i],
+      sunrise: data.daily!.sunrise[i],
+      sunset: data.daily!.sunset[i],
+      uvIndexMax: data.daily!.uv_index_max[i] ?? 0,
+      precipitation: data.daily!.precipitation_sum[i],
+      rainChance: data.daily!.precipitation_probability_max[i] ?? 0,
+      windSpeedMax: data.daily!.wind_speed_10m_max[i],
+      summary: weatherLook(data.daily!.weather_code[i]).label,
+    }))
+    .filter((d) => calendarDate(d.date, data.timezone) >= today)
+    .slice(0, 7);
 
   return { current, hourly, daily, timezone: data.timezone };
 }
