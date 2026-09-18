@@ -8,20 +8,37 @@ function layerUrl(layer: L.TileLayer): string {
 
 export class RadarFader {
   private map: L.Map;
+  private base: L.TileLayer;
   private front: L.TileLayer;
   private back: L.TileLayer;
   private ready = new Set<string>();
+  private lastBase = "";
   pos = 0;
 
   constructor(map: L.Map, maxNativeZoom: number, initialUrl: string) {
     this.map = map;
+    if (!map.getPane("radar-base")) {
+      const basePane = map.createPane("radar-base");
+      basePane.style.zIndex = "440";
+      basePane.style.pointerEvents = "none";
+    }
     if (!map.getPane("radar")) {
       const pane = map.createPane("radar");
       pane.style.zIndex = "450";
       pane.style.pointerEvents = "none";
     }
 
-    const opts: L.TileLayerOptions = {
+    const raster: L.TileLayerOptions = {
+      pane: "radar-base",
+      maxNativeZoom,
+      maxZoom: maxNativeZoom + 2,
+      className: "radar-base",
+      keepBuffer: 8,
+      updateWhenIdle: false,
+      updateWhenZooming: true,
+      opacity: RADAR_OPACITY,
+    };
+    const skinned: L.TileLayerOptions = {
       pane: "radar",
       maxNativeZoom,
       maxZoom: maxNativeZoom + 2,
@@ -30,8 +47,10 @@ export class RadarFader {
       updateWhenIdle: false,
       updateWhenZooming: false,
     };
-    this.front = contourTileLayer(initialUrl, { ...opts, opacity: RADAR_OPACITY }).addTo(map);
-    this.back = contourTileLayer(initialUrl, { ...opts, opacity: 0 }).addTo(map);
+    this.base = L.tileLayer(initialUrl, raster).addTo(map);
+    this.front = contourTileLayer(initialUrl, { ...skinned, opacity: RADAR_OPACITY }).addTo(map);
+    this.back = contourTileLayer(initialUrl, { ...skinned, opacity: 0 }).addTo(map);
+    this.lastBase = initialUrl;
     this.watch(this.front);
     this.watch(this.back);
     this.ready.add(initialUrl);
@@ -109,6 +128,7 @@ export class RadarFader {
         this.front.setOpacity(RADAR_OPACITY);
         this.back.setOpacity(0);
       }
+      this.syncBase(fromUrl);
       return from;
     }
 
@@ -121,10 +141,18 @@ export class RadarFader {
       this.loadHidden(toUrl);
     }
 
+    this.syncBase(fromUrl);
     return from;
   }
 
+  private syncBase(url: string) {
+    if (!url || url === this.lastBase) return;
+    this.lastBase = url;
+    this.base.setUrl(url);
+  }
+
   destroy() {
+    this.map.removeLayer(this.base);
     this.map.removeLayer(this.front);
     this.map.removeLayer(this.back);
   }
