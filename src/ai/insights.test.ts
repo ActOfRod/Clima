@@ -145,7 +145,7 @@ describe("generateBriefing", () => {
 
   it("formats temperatures and wind for imperial", () => {
     const result = generateBriefing(bundle(), "imperial");
-    expect(result.headline).toContain("88°");
+    expect(result.summary).toContain("88°");
     expect(result.summary).toContain("mph");
   });
 });
