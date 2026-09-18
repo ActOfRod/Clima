@@ -1,5 +1,6 @@
 import L from "leaflet";
 import { RADAR_OPACITY, blendOpacities, frameBlend } from "./radarPlayback";
+import { contourTileLayer } from "./contourTileLayer";
 
 function layerUrl(layer: L.TileLayer): string {
   return (layer as unknown as { _url?: string })._url ?? "";
@@ -29,8 +30,8 @@ export class RadarFader {
       updateWhenIdle: false,
       updateWhenZooming: false,
     };
-    this.front = L.tileLayer(initialUrl, { ...opts, opacity: RADAR_OPACITY }).addTo(map);
-    this.back = L.tileLayer(initialUrl, { ...opts, opacity: 0 }).addTo(map);
+    this.front = contourTileLayer(initialUrl, { ...opts, opacity: RADAR_OPACITY }).addTo(map);
+    this.back = contourTileLayer(initialUrl, { ...opts, opacity: 0 }).addTo(map);
     this.watch(this.front);
     this.watch(this.back);
     this.ready.add(initialUrl);
