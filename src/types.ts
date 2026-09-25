@@ -103,6 +103,46 @@ export interface PersonalModel {
   lastByPlace: Record<string, number>;
 }
 
+export interface WeatherStation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+}
+
+export interface ModelTrust {
+  model: string;
+  label: string;
+  weight: number;
+  mae: number | null;
+}
+
+export type LocalModelStatus = "active" | "learning" | "no-station" | "unavailable";
+
+export interface LocalModelInfo {
+  status: LocalModelStatus;
+  station?: WeatherStation;
+  trainedAt?: string;
+  samples: number;
+  tempMae?: number;
+  baselineMae?: number;
+  bestSingle?: { label: string; mae: number };
+  rainBrier?: number;
+  rainBaselineBrier?: number;
+  trust: ModelTrust[];
+  /** Temperature skill per lead day (today, tomorrow, day 3, day 4+). */
+  leads?: Array<{ mae: number; base: number; useful: boolean } | null>;
+  nowcast?: { obsTime: string; obsTemp: number; residual: number };
+  history: SkillSnapshot[];
+}
+
+export interface SkillSnapshot {
+  t: string;
+  mae: number;
+  base: number;
+}
+
 export interface WeatherBundle {
   place: Place;
   current: CurrentWeather;
@@ -113,6 +153,7 @@ export interface WeatherBundle {
   updatedAt: string;
   sources: string[];
   skill?: ForecastSkill;
+  local?: LocalModelInfo;
 }
 
 export interface RadarFrame {
@@ -124,7 +165,10 @@ export interface RadarCatalog {
   host: string;
   frames: RadarFrame[];
   nowcast: RadarFrame[];
+  satellite: RadarFrame[];
 }
+
+export type MapLayer = "radar" | "satellite" | "both";
 
 export interface InsightCard {
   id: string;
@@ -159,4 +203,7 @@ export interface SettingsState {
   animations: boolean;
   theme: ThemeId;
   defaultPage: DefaultPage;
+  radarPalette: number;
+  radarArrows: boolean;
+  mapLayer: MapLayer;
 }

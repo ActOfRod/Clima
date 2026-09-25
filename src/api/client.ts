@@ -12,6 +12,24 @@ export async function getJson<T>(
   init: RequestInit = {},
   timeoutMs = 12_000,
 ): Promise<T> {
+  return request(url, init, timeoutMs, "application/json", (res) => res.json() as Promise<T>);
+}
+
+export async function getText(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = 20_000,
+): Promise<string> {
+  return request(url, init, timeoutMs, "text/plain", (res) => res.text());
+}
+
+async function request<T>(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  accept: string,
+  read: (res: Response) => Promise<T>,
+): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -19,14 +37,14 @@ export async function getJson<T>(
       ...init,
       signal: controller.signal,
       headers: {
-        Accept: "application/json",
+        Accept: accept,
         ...(init.headers ?? {}),
       },
     });
     if (!res.ok) {
       throw new ApiError(`Request failed (${res.status})`, res.status);
     }
-    return (await res.json()) as T;
+    return await read(res);
   } catch (err) {
     if (err instanceof ApiError) throw err;
     if (err instanceof DOMException && err.name === "AbortError") {

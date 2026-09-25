@@ -72,11 +72,11 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https:\/\/tilecache\.rainviewer\.com\/.*/i,
+            urlPattern: /^https:\/\/api\.librewxr\.net\/v2\/.*/i,
             handler: "CacheFirst",
             options: {
               cacheName: "radar-tiles",
-              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 },
+              expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 },
             },
           },
         ],

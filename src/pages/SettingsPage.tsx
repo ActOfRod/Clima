@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { RADAR_PALETTES } from "../api/librewxr";
 import { useApp } from "../context/AppContext";
 import { THEMES } from "../lib/theme";
 import type { DefaultPage, ThemeId } from "../types";
@@ -93,15 +94,32 @@ export function SettingsPage() {
         </button>
       </section>
 
-      <section className="card p-5">
-        <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">MOTION</h2>
-        <div className="mt-3">
-          <Toggle
-            label="Radar animations"
-            on={settings.animations}
-            onChange={(animations) => updateSettings({ animations })}
-          />
+      <section className="card space-y-4 p-5">
+        <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">RADAR</h2>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {RADAR_PALETTES.map((palette) => (
+            <button
+              key={palette.id}
+              type="button"
+              onClick={() => updateSettings({ radarPalette: palette.id })}
+              className={`rounded-2xl px-3 py-3 text-sm ${
+                settings.radarPalette === palette.id ? "bg-accent text-on-accent" : "bg-soft"
+              }`}
+            >
+              {palette.label}
+            </button>
+          ))}
         </div>
+        <Toggle
+          label="Radar animations"
+          on={settings.animations}
+          onChange={(animations) => updateSettings({ animations })}
+        />
+        <Toggle
+          label="Storm motion arrows"
+          on={settings.radarArrows}
+          onChange={(radarArrows) => updateSettings({ radarArrows })}
+        />
       </section>
 
       <section className="card space-y-3 p-5">
@@ -123,11 +141,25 @@ export function SettingsPage() {
           <a className="text-accent" href="https://api.weather.gov" target="_blank" rel="noreferrer">
             api.weather.gov
           </a>
-          . US radar is NOAA NEXRAD via Iowa State. Global radar is NASA GPM IMERG.
+          . Radar comes from{" "}
+          <a className="text-accent" href="https://librewxr.net" target="_blank" rel="noreferrer">
+            LibreWXR
+          </a>{" "}
+          (CC-BY-4.0), with NOAA NEXRAD and NASA GPM as backups. Weather-station readings used to
+          train the local model come from the{" "}
+          <a
+            className="text-accent"
+            href="https://mesonet.agron.iastate.edu/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Iowa Environmental Mesonet
+          </a>
+          .
         </p>
         <p className="text-xs text-muted">
-          Clima AI and Teach Clima run on-device. Ensemble spread, clothing, and your colder/wetter
-          notes never leave this phone.
+          Clima AI, the local model, and Teach Clima all train and run on-device. Your notes and the
+          trained model never leave this phone.
         </p>
         <Link className="inline-block text-sm text-accent" to="/privacy">
           Privacy

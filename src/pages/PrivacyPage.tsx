@@ -16,9 +16,15 @@ export function PrivacyPage() {
         from the forecast payload.
       </p>
       <p>
+        The Clima local model trains on your device. To do that, the app downloads past model
+        forecasts from Open-Meteo and readings from the nearest public airport weather station via
+        the Iowa Environmental Mesonet. The trained model is stored in local browser storage and
+        is never uploaded.
+      </p>
+      <p>
         We do not run our own analytics, ads, or accounts. Third-party APIs (Open-Meteo, National
-        Weather Service, Iowa State NEXRAD, NASA GIBS, Esri) may log standard request metadata
-        according to their own policies.
+        Weather Service, Iowa Environmental Mesonet, LibreWXR, NASA GIBS, Esri) may log standard
+        request metadata according to their own policies.
       </p>
     </article>
   );

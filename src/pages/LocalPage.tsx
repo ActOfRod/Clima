@@ -11,6 +11,7 @@ import { ConfidenceCard } from "../components/weather/ConfidenceCard";
 import { FeedbackBar } from "../components/weather/FeedbackBar";
 import { CurrentHero } from "../components/weather/CurrentHero";
 import { HourlyForecast } from "../components/weather/HourlyForecast";
+import { LocalModelCard } from "../components/weather/LocalModelCard";
 import { SearchBar } from "../components/weather/SearchBar";
 import { StatusScreen } from "../components/weather/Status";
 import { useApp } from "../context/AppContext";
@@ -76,6 +77,7 @@ export function LocalPage() {
       <SearchBar />
       <CurrentHero compact />
       <ConfidenceCard />
+      <LocalModelCard />
       <FeedbackBar />
       <AiInsights />
       {weather.alerts.length > 0 && (
