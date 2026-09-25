@@ -52,6 +52,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   defaultPage: "weather",
   radarPalette: DEFAULT_RADAR_PALETTE,
   radarArrows: false,
+  mapLayer: "radar",
 };
 
 interface AppState {

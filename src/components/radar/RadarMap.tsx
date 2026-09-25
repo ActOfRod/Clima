@@ -7,11 +7,12 @@ import {
   fetchRadarCatalog,
   paletteLegend,
   radarTileTemplate,
+  satelliteTileTemplate,
 } from "../../api/librewxr";
 import { nexradFrames, nexradTileTemplate } from "../../api/nexrad";
 import { useApp } from "../../context/AppContext";
 import { isConus } from "../../lib/geo";
-import type { RadarCatalog } from "../../types";
+import type { MapLayer, RadarCatalog } from "../../types";
 import { RadarFader } from "./radarFader";
 import {
   prefetchImages,
@@ -211,8 +212,53 @@ const SOURCES: Record<
   },
 };
 
+/**
+ * GMGSI is ~8 km per pixel and the server upsamples with hard pixel edges.
+ * Capping native zoom low lets the browser's smooth scaling soften the blocks.
+ */
+const SATELLITE_LOOP = { maxNativeZoom: 5, frameMs: 750 };
+
+function layerLabel(layer: MapLayer, radarLabel: string): string {
+  switch (layer) {
+    case "radar":
+      return radarLabel;
+    case "satellite":
+      return "NOAA GMGSI satellite via LibreWXR — hourly, visible by day, infrared at night";
+    case "both":
+      return `${radarLabel} · latest satellite underneath`;
+    default: {
+      const never: never = layer;
+      return never;
+    }
+  }
+}
+
+const MAP_LAYERS: Array<{ id: MapLayer; label: string }> = [
+  { id: "radar", label: "Radar" },
+  { id: "satellite", label: "Satellite" },
+  { id: "both", label: "Both" },
+];
+
+function SatelliteUnderlay({ url }: { url: string }) {
+  const map = useMap();
+  if (!map.getPane("satellite")) {
+    const pane = map.createPane("satellite");
+    pane.style.zIndex = "420";
+    pane.style.pointerEvents = "none";
+  }
+  return (
+    <TileLayer
+      pane="satellite"
+      url={url}
+      opacity={0.72}
+      maxNativeZoom={SATELLITE_LOOP.maxNativeZoom}
+      attribution={LIBREWXR_ATTRIBUTION}
+    />
+  );
+}
+
 export function RadarMap({ height = "100%" }: { height?: string }) {
-  const { place, settings } = useApp();
+  const { place, settings, updateSettings } = useApp();
   const conus = isConus(place);
   const [catalog, setCatalog] = useState<RadarCatalog | null>(null);
   const [catalogFailed, setCatalogFailed] = useState(false);
@@ -249,16 +295,34 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
         : "gpm"
       : null;
   const config = SOURCES[source ?? (conus ? "nexrad" : "gpm")];
+  const hasSatellite = source === "librewxr" && (catalog?.satellite.length ?? 0) > 0;
+  const layer: MapLayer = hasSatellite ? (settings.mapLayer ?? "radar") : "radar";
+  const satelliteLoop = layer === "satellite";
+  const latestSatellite = catalog?.satellite.at(-1);
+  const underlayUrl =
+    layer === "both" && catalog && latestSatellite
+      ? satelliteTileTemplate(catalog.host, latestSatellite.path)
+      : null;
+  const loop = satelliteLoop
+    ? { ...SATELLITE_LOOP, skin: false, attribution: LIBREWXR_ATTRIBUTION }
+    : config;
 
   useEffect(() => {
     setPinned(null);
-  }, [source]);
+  }, [source, layer]);
 
   const frames = useMemo<LoopFrame[]>(() => {
     void tick;
     switch (source) {
       case "librewxr": {
         if (!catalog) return [];
+        if (satelliteLoop) {
+          return catalog.satellite.map((f) => ({
+            time: f.time,
+            url: satelliteTileTemplate(catalog.host, f.path),
+            nowcast: false,
+          }));
+        }
         const url = (path: string) =>
           radarTileTemplate(catalog.host, path, settings.radarPalette, settings.radarArrows);
         return [
@@ -281,7 +345,7 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
         return never;
       }
     }
-  }, [source, catalog, settings.radarPalette, settings.radarArrows, tick]);
+  }, [source, catalog, satelliteLoop, settings.radarPalette, settings.radarArrows, tick]);
 
   const urls = useMemo(() => frames.map((f) => f.url), [frames]);
   const liveIndex = Math.max(0, frames.filter((f) => !f.nowcast).length - 1);
@@ -338,21 +402,44 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
               {place.name}
             </Tooltip>
           </CircleMarker>
+          {underlayUrl && <SatelliteUnderlay url={underlayUrl} />}
           {urls.length > 0 && (
             <RadarLoop
               urls={urls}
               index={safeIndex}
               playing={playing}
-              frameMs={config.frameMs}
-              maxNativeZoom={config.maxNativeZoom}
-              skin={config.skin}
-              attribution={config.attribution}
+              frameMs={loop.frameMs}
+              maxNativeZoom={loop.maxNativeZoom}
+              skin={loop.skin}
+              attribution={loop.attribution}
               onIndex={setPinned}
             />
           )}
           <Recenter lat={place.latitude} lon={place.longitude} />
           <InvalidateSize />
         </MapContainer>
+        {hasSatellite && (
+          <div
+            role="radiogroup"
+            aria-label="Map layer"
+            className="absolute right-3 top-3 z-[1000] flex rounded-full bg-black/55 p-1 text-[11px] font-medium backdrop-blur"
+          >
+            {MAP_LAYERS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={layer === option.id}
+                onClick={() => updateSettings({ mapLayer: option.id })}
+                className={`rounded-full px-3 py-1.5 ${
+                  layer === option.id ? "bg-accent text-on-accent" : "text-white/80"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="relative z-20 shrink-0 bg-panel-2 px-4 py-3">
         <div className="flex items-center gap-3">
@@ -399,22 +486,26 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
             </div>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between text-[10px] text-muted">
-          <span>{source ? config.label : "Loading radar…"}</span>
-          <span className="flex items-center gap-2">
-            Light
-            {source === "librewxr" ? (
-              <span
-                className="h-2 w-24 rounded-full"
-                style={{
-                  background: `linear-gradient(to right, ${paletteLegend(settings.radarPalette).join(", ")})`,
-                }}
-              />
-            ) : (
-              <span className="h-2 w-24 rounded-full bg-gradient-to-r from-[#3dd6c6] via-[#f5c16c] to-[#ff5d73]" />
-            )}
-            Heavy
-          </span>
+        <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-muted">
+          <span>{source ? layerLabel(layer, config.label) : "Loading radar…"}</span>
+          {satelliteLoop ? (
+            <span className="shrink-0">GOES · Meteosat · Himawari</span>
+          ) : (
+            <span className="flex shrink-0 items-center gap-2">
+              Light
+              {source === "librewxr" ? (
+                <span
+                  className="h-2 w-24 rounded-full"
+                  style={{
+                    background: `linear-gradient(to right, ${paletteLegend(settings.radarPalette).join(", ")})`,
+                  }}
+                />
+              ) : (
+                <span className="h-2 w-24 rounded-full bg-gradient-to-r from-[#3dd6c6] via-[#f5c16c] to-[#ff5d73]" />
+              )}
+              Heavy
+            </span>
+          )}
         </div>
       </div>
     </div>

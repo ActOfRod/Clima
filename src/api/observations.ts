@@ -1,10 +1,11 @@
 import { distanceKm } from "../lib/geo";
 import type { HourObs, ObsSeries } from "../lib/localModel";
 import type { Place, WeatherStation } from "../types";
-import { getJson, getText } from "./client";
+import { ApiError, getJson, getText } from "./client";
 import { isLikelyUs } from "./nws";
 
 const MAX_STATION_KM = 60;
+const IEM_RETRY_MS = 4000;
 const PRECIP_CODES = /(RA|DZ|SN|SG|PL|GR|GS|UP|IC)/;
 
 const CANADA_PROVINCES: Record<string, string> = {
@@ -181,8 +182,12 @@ export async function fetchObservations(
   });
   for (const d of ["tmpf", "p01i", "wxcodes"]) params.append("data", d);
   for (const r of ["3", "4"]) params.append("report_type", r);
-  const csv = await getText(
-    `https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?${params}`,
-  );
-  return parseIemCsv(csv);
+  const url = `https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?${params}`;
+  try {
+    return parseIemCsv(await getText(url));
+  } catch (err) {
+    if (!(err instanceof ApiError) || err.status !== 429) throw err;
+    await new Promise((resolve) => setTimeout(resolve, IEM_RETRY_MS));
+    return parseIemCsv(await getText(url));
+  }
 }

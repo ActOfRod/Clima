@@ -11,6 +11,8 @@ const GLOBAL_MODELS = [
   "ukmo_seamless",
 ];
 
+const HOURLY_VARS = ["temperature_2m", "precipitation", "cloud_cover", "relative_humidity_2m"];
+
 export function modelsFor(place: Pick<Place, "latitude" | "longitude">): string[] {
   return isConus(place) ? [...GLOBAL_MODELS, "ncep_nbm_conus"] : GLOBAL_MODELS;
 }
@@ -42,10 +44,7 @@ export async function fetchModelHistory(
   models: string[],
   days: number,
 ): Promise<ModelHistory> {
-  const vars = LEADS.flatMap((lead) => [
-    leadVar("temperature_2m", lead),
-    leadVar("precipitation", lead),
-  ]);
+  const vars = LEADS.flatMap((lead) => HOURLY_VARS.map((v) => leadVar(v, lead)));
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -63,15 +62,15 @@ export async function fetchModelHistory(
   const hourly = data.hourly;
   if (!hourly?.time?.length) throw new Error("Empty model history");
   const single = models.length === 1;
+  const byLead = (variable: string) =>
+    LEADS.map((lead) => models.map((m) => column(hourly, leadVar(variable, lead), m, single)));
   return {
     times: hourly.time,
     models,
-    temp: LEADS.map((lead) =>
-      models.map((m) => column(hourly, leadVar("temperature_2m", lead), m, single)),
-    ),
-    precip: LEADS.map((lead) =>
-      models.map((m) => column(hourly, leadVar("precipitation", lead), m, single)),
-    ),
+    temp: byLead("temperature_2m"),
+    precip: byLead("precipitation"),
+    cloud: byLead("cloud_cover"),
+    humidity: byLead("relative_humidity_2m"),
   };
 }
 
@@ -80,7 +79,7 @@ export async function fetchPlaceForecast(place: Place, models: string[]): Promis
   const params = new URLSearchParams({
     latitude: String(place.latitude),
     longitude: String(place.longitude),
-    hourly: "temperature_2m,precipitation",
+    hourly: HOURLY_VARS.join(","),
     models: models.join(","),
     forecast_days: "7",
     timezone: "auto",
@@ -97,5 +96,7 @@ export async function fetchPlaceForecast(place: Place, models: string[]): Promis
     models,
     temp: models.map((m) => column(hourly, "temperature_2m", m, single)),
     precip: models.map((m) => column(hourly, "precipitation", m, single)),
+    cloud: models.map((m) => column(hourly, "cloud_cover", m, single)),
+    humidity: models.map((m) => column(hourly, "relative_humidity_2m", m, single)),
   };
 }

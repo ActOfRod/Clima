@@ -165,7 +165,10 @@ export interface RadarCatalog {
   host: string;
   frames: RadarFrame[];
   nowcast: RadarFrame[];
+  satellite: RadarFrame[];
 }
+
+export type MapLayer = "radar" | "satellite" | "both";
 
 export interface InsightCard {
   id: string;
@@ -202,4 +205,5 @@ export interface SettingsState {
   defaultPage: DefaultPage;
   radarPalette: number;
   radarArrows: boolean;
+  mapLayer: MapLayer;
 }

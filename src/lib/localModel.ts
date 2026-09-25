@@ -11,13 +11,13 @@ import { fitLogistic, sigmoid } from "./ml/logistic";
 import { fitRidge } from "./ml/ridge";
 import { clamp, finite, mean } from "./stats";
 
-export const LOCAL_MODEL_VERSION = 1;
+export const LOCAL_MODEL_VERSION = 2;
 
 /** Forecast lead buckets: 0 = 0–23 h ahead, 1 = 24–47 h, 2 = 48–71 h, 3 = 72 h+. */
 export const LEADS = [0, 1, 2, 3] as const;
 
 export const MODEL_LABELS: Record<string, string> = {
-  gfs_seamless: "GFS (NOAA)",
+  gfs_seamless: "GFS + HRRR (NOAA)",
   ecmwf_ifs025: "ECMWF",
   icon_seamless: "ICON (DWD)",
   gem_seamless: "GEM (Canada)",
@@ -31,6 +31,8 @@ const MIN_MODEL_COVERAGE = 0.6;
 const WET_MM = 0.1;
 const TEMP_LAMBDAS = [0.003, 0.01, 0.03, 0.1, 0.3, 1];
 const RAIN_LAMBDAS = [0.001, 0.01, 0.1];
+const RAIN_FOLDS = 5;
+const MIN_WET_HOURS = 12;
 const NOWCAST_E_FOLD_H = 5;
 const NOWCAST_MAX_AGE_H = 3;
 const FULL_TRUST_KM = 15;
@@ -43,6 +45,15 @@ export interface ModelHistory {
   /** [lead][model][hour] */
   temp: Array<Array<Array<number | null>>>;
   precip: Array<Array<Array<number | null>>>;
+  cloud: Array<Array<Array<number | null>>>;
+  humidity: Array<Array<Array<number | null>>>;
+}
+
+/** Per-model hourly series, [model][hour], in a fixed model order. */
+interface RainInputs {
+  precip: Array<Array<number | null>>;
+  cloud: Array<Array<number | null>>;
+  humidity: Array<Array<number | null>>;
 }
 
 export interface HourObs {
@@ -60,6 +71,8 @@ export interface PlaceForecast {
   models: string[];
   temp: Array<Array<number | null>>;
   precip: Array<Array<number | null>>;
+  cloud: Array<Array<number | null>>;
+  humidity: Array<Array<number | null>>;
 }
 
 export interface LeadTempModel {
@@ -75,7 +88,9 @@ export interface LeadTempModel {
 }
 
 export interface LeadRainModel {
+  models: string[];
   weights: number[];
+  /** Blocked cross-validated Brier score of the model and of the raw vote. */
   brier: number;
   baseBrier: number;
   n: number;
@@ -120,27 +135,44 @@ function tempRow(
   };
 }
 
-function rainRow(
-  series: Array<Array<number | null>>,
-  i: number,
-): { wetFrac: number; x: number[] } | null {
-  const now = finite(series.map((s) => s[i]));
+function windowAt(s: Array<number | null>, i: number, k: number): number[] {
+  return finite(s.slice(Math.max(0, i - k), i + k + 1));
+}
+
+/**
+ * Rain features: the models' vote and amounts, each model's own amount (so the
+ * fit learns which model to believe here), cloud and humidity, and a ±2 h window
+ * that forgives timing errors.
+ */
+function rainRow(inputs: RainInputs, i: number): { wetFrac: number; x: number[] } | null {
+  const { precip, cloud, humidity } = inputs;
+  const now = finite(precip.map((s) => s[i]));
   if (now.length < 2) return null;
+  const avg = mean(now);
   const wetFrac = now.filter((p) => p >= WET_MM).length / now.length;
-  const smooth = finite(
-    series.map((s) => {
-      const window = finite([s[i - 1], s[i], s[i + 1]]);
-      return window.length ? mean(window) : null;
-    }),
-  );
+  const near = finite(precip.map((s) => {
+    const w = windowAt(s, i, 1);
+    return w.length ? mean(w) : null;
+  }));
+  const wide = finite(precip.map((s) => {
+    const w = windowAt(s, i, 2);
+    return w.length ? Math.max(...w) : null;
+  }));
+  const cc = finite(cloud.map((s) => s[i]));
+  const rh = finite(humidity.map((s) => s[i]));
   return {
     wetFrac,
     x: [
       1,
       wetFrac,
-      Math.log1p(mean(now)),
+      Math.log1p(avg),
       Math.log1p(Math.max(...now)),
-      Math.log1p(smooth.length ? mean(smooth) : 0),
+      Math.log1p(near.length ? mean(near) : 0),
+      ...precip.map((s) => Math.log1p(s[i] ?? avg)),
+      cc.length ? mean(cc) / 100 : 0.5,
+      rh.length ? mean(rh) / 100 : 0.7,
+      Math.log1p(wide.length ? mean(wide) : 0),
+      wide.length ? wide.filter((p) => p >= WET_MM).length / wide.length : wetFrac,
     ],
   };
 }
@@ -226,52 +258,78 @@ function brier(probs: number[], outcomes: number[]): number {
   return mean(probs.map((p, i) => (p - outcomes[i]) ** 2));
 }
 
+function rainInputsFor(
+  models: string[],
+  seriesOf: (kind: keyof RainInputs, model: string) => Array<number | null> | undefined,
+): RainInputs {
+  const get = (kind: keyof RainInputs) => models.map((m) => seriesOf(kind, m) ?? []);
+  return { precip: get("precip"), cloud: get("cloud"), humidity: get("humidity") };
+}
+
+/**
+ * Rain is rare, so a single recent validation block holds too few wet hours to
+ * judge the model. Selection and the usefulness gate use blocked k-fold
+ * cross-validation over contiguous time blocks instead.
+ */
 function trainRainLead(
   history: ModelHistory,
   obs: ObsSeries,
   lead: number,
 ): LeadRainModel | null {
-  const series = history.precip[lead];
-  if (!series?.length) return null;
-  const rows: Array<{ x: number[]; y: number; wetFrac: number; ms: number }> = [];
-  history.times.forEach((t, i) => {
-    const wet = obs.get(hourKey(t))?.wet;
-    if (wet == null) return;
-    const row = rainRow(series, i);
-    if (!row) return;
-    rows.push({ x: row.x, y: wet ? 1 : 0, wetFrac: row.wetFrac, ms: utcMs(t) });
-  });
-  const wetCount = rows.filter((r) => r.y === 1).length;
-  if (rows.length < MIN_ROWS || wetCount < 12) return null;
+  const labelled = history.times
+    .map((t, i) => ({ i, t, wet: obs.get(hourKey(t))?.wet ?? null }))
+    .filter((r): r is { i: number; t: string; wet: boolean } => r.wet != null);
+  if (labelled.length < MIN_ROWS) return null;
 
+  const models = history.models.filter((_, m) => {
+    const series = history.precip[lead]?.[m];
+    if (!series) return false;
+    return labelled.filter((r) => series[r.i] != null).length / labelled.length >= MIN_MODEL_COVERAGE;
+  });
+  if (models.length < 2) return null;
+  const idx = (m: string) => history.models.indexOf(m);
+  const inputs = rainInputsFor(models, (kind, m) => history[kind][lead]?.[idx(m)]);
+
+  const rows: Array<{ x: number[]; y: number; wetFrac: number; ms: number }> = [];
+  for (const r of labelled) {
+    const row = rainRow(inputs, r.i);
+    if (row) rows.push({ x: row.x, y: r.wet ? 1 : 0, wetFrac: row.wetFrac, ms: utcMs(r.t) });
+  }
+  const wetCount = rows.filter((r) => r.y === 1).length;
+  if (rows.length < MIN_ROWS || wetCount < MIN_WET_HOURS) return null;
+
+  const x = rows.map((r) => r.x);
+  const y = rows.map((r) => r.y);
   const weights = recencyWeights(rows.map((r) => r.ms));
-  const split = Math.floor(rows.length * 0.8);
-  const train = rows.slice(0, split);
-  const val = rows.slice(split);
-  const trainW = weights.slice(0, split);
-  const valY = val.map((r) => r.y);
+  const n = rows.length;
 
   let best = { lambda: RAIN_LAMBDAS[0], brier: Infinity };
   for (const lambda of RAIN_LAMBDAS) {
+    const preds: number[] = [];
     try {
-      const w = fitLogistic(train.map((r) => r.x), train.map((r) => r.y), lambda, trainW);
-      const b = brier(val.map((r) => sigmoid(dot(r.x, w))), valY);
-      if (b < best.brier) best = { lambda, brier: b };
+      for (let f = 0; f < RAIN_FOLDS; f++) {
+        const a = Math.floor((f * n) / RAIN_FOLDS);
+        const b = Math.floor(((f + 1) * n) / RAIN_FOLDS);
+        const keep = (_: unknown, i: number) => i < a || i >= b;
+        const w = fitLogistic(x.filter(keep), y.filter(keep), lambda, weights.filter(keep));
+        for (let i = a; i < b; i++) preds.push(sigmoid(dot(x[i], w)));
+      }
     } catch {
-      /* try the next lambda */
+      continue;
     }
+    const score = brier(preds, y);
+    if (score < best.brier) best = { lambda, brier: score };
   }
   if (!Number.isFinite(best.brier)) return null;
 
-  const baseBrier = brier(val.map((r) => r.wetFrac), valY);
-  const final = fitLogistic(rows.map((r) => r.x), rows.map((r) => r.y), best.lambda, weights);
-  const valWet = valY.filter((y) => y === 1).length;
+  const baseBrier = brier(rows.map((r) => r.wetFrac), y);
   return {
-    weights: final,
+    models,
+    weights: fitLogistic(x, y, best.lambda, weights),
     brier: best.brier,
     baseBrier,
-    n: rows.length,
-    useful: valWet >= 3 && best.brier < baseBrier * 0.98,
+    n,
+    useful: best.brier < baseBrier * 0.98,
   };
 }
 
@@ -401,8 +459,11 @@ export function predictForecast(
     let rain: number | null = null;
     const rm = model.rain[lead];
     if (rm?.useful) {
-      const series = forecast.models.map((_, k) => forecast.precip[k] ?? []);
-      const row = rainRow(series, i);
+      const inputs = rainInputsFor(rm.models, (kind, m) => {
+        const k = idx.get(m);
+        return k == null ? undefined : forecast[kind][k];
+      });
+      const row = rainRow(inputs, i);
       if (row) rain = sigmoid(dot(row.x, rm.weights)) * 100;
     }
     return { mu, temp, adj, rain };

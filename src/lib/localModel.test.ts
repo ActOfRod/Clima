@@ -47,8 +47,11 @@ function synthetic(days = 50) {
   const times: string[] = [];
   const obs: ObsSeries = new Map();
   const models = ["warm", "noisy", "good"];
-  const temp = LEADS.map(() => models.map(() => [] as Array<number | null>));
-  const precip = LEADS.map(() => models.map(() => [] as Array<number | null>));
+  const series = () => LEADS.map(() => models.map(() => [] as Array<number | null>));
+  const temp = series();
+  const precip = series();
+  const cloud = series();
+  const humidity = series();
   for (let h = 0; h < days * 24; h++) {
     const ms = start + h * 3_600_000;
     const time = new Date(ms).toISOString().slice(0, 16);
@@ -64,10 +67,12 @@ function synthetic(days = 50) {
       const wetSignal = raining ? 0.6 : 0.05;
       models.forEach((_, m) => {
         precip[lead][m].push(rand() < wetSignal ? rand() * 2 : 0);
+        cloud[lead][m].push(raining ? 80 + rand() * 20 : rand() * 70);
+        humidity[lead][m].push(raining ? 85 + rand() * 15 : 40 + rand() * 40);
       });
     });
   }
-  const history: ModelHistory = { times, models, temp, precip };
+  const history: ModelHistory = { times, models, temp, precip, cloud, humidity };
   return { history, obs, start, days };
 }
 
@@ -85,12 +90,31 @@ describe("trainLocalModel", () => {
     expect(info.trust.find((t) => t.model === "warm")!.weight).toBeLessThan(0.34);
   });
 
-  it("learns a rain model that is at least as good as the raw vote", () => {
+  it("learns a cross-validated rain model that beats the raw vote", () => {
     const { history, obs } = synthetic();
     const model = trainLocalModel(history, obs, STATION);
     const rain = model.rain[0];
     expect(rain).not.toBeNull();
-    expect(rain!.brier).toBeLessThanOrEqual(rain!.baseBrier);
+    expect(rain!.useful).toBe(true);
+    expect(rain!.brier).toBeLessThan(rain!.baseBrier);
+    expect(rain!.models).toEqual(["warm", "noisy", "good"]);
+  });
+
+  it("predicts low rain odds for a dry forecast and higher for a wet one", () => {
+    const { history, obs, start, days } = synthetic();
+    const model = { ...trainLocalModel(history, obs, STATION), nowcast: undefined };
+    const fStart = start + days * 86_400_000;
+    const dry = forecastFor(fStart, 12, 0);
+    const wet = {
+      ...dry,
+      precip: dry.precip.map((s) => s.map(() => 1.5)),
+      cloud: dry.cloud.map((s) => s.map(() => 95)),
+      humidity: dry.humidity.map((s) => s.map(() => 95)),
+    };
+    const dryRain = predictForecast(model, dry, fStart)[2].rain!;
+    const wetRain = predictForecast(model, wet, fStart)[2].rain!;
+    expect(dryRain).toBeLessThan(20);
+    expect(wetRain).toBeGreaterThan(dryRain + 30);
   });
 
   it("returns no lead models when there are too few observations", () => {
@@ -126,6 +150,8 @@ function forecastFor(start: number, hours: number, bias: number): PlaceForecast 
     models: ["warm", "noisy", "good"],
     temp,
     precip: [times.map(() => 0), times.map(() => 0), times.map(() => 0)],
+    cloud: [times.map(() => 20), times.map(() => 20), times.map(() => 20)],
+    humidity: [times.map(() => 50), times.map(() => 50), times.map(() => 50)],
   };
 }
 

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { radarTileTemplate } from "./librewxr";
+import { radarTileTemplate, satelliteTileTemplate } from "./librewxr";
+
+describe("satelliteTileTemplate", () => {
+  it("uses the fixed satellite color/options segment", () => {
+    expect(satelliteTileTemplate("https://h", "/v2/satellite/1790344800")).toBe(
+      "https://h/v2/satellite/1790344800/256/{z}/{x}/{y}/0/0_0.png",
+    );
+  });
+});
 
 describe("radarTileTemplate", () => {
   it("builds a smoothed 256px tile URL for the chosen palette", () => {

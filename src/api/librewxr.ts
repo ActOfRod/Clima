@@ -28,16 +28,34 @@ interface WeatherMapsResponse {
     past?: RadarFrame[];
     nowcast?: RadarFrame[];
   };
+  satellite?: {
+    infrared?: RadarFrame[];
+  };
 }
 
-/** Rain Viewer v2–compatible catalog: ~2 h of past frames plus a 1 h nowcast. */
+const toFrames = (list?: RadarFrame[]): RadarFrame[] =>
+  (list ?? []).map((f) => ({ time: f.time, path: f.path }));
+
+/**
+ * Rain Viewer v2–compatible catalog: ~2 h of past radar frames, a 1 h nowcast,
+ * and ~12 h of hourly NOAA GMGSI satellite frames.
+ */
 export async function fetchRadarCatalog(): Promise<RadarCatalog> {
   const data = await getJson<WeatherMapsResponse>(`${LIBREWXR_API}/public/weather-maps.json`);
   const host = (data.host ?? LIBREWXR_API).replace(/\/$/, "");
-  const frames = (data.radar?.past ?? []).map((f) => ({ time: f.time, path: f.path }));
-  const nowcast = (data.radar?.nowcast ?? []).map((f) => ({ time: f.time, path: f.path }));
+  const frames = toFrames(data.radar?.past);
   if (!frames.length) throw new Error("No radar frames");
-  return { host, frames, nowcast };
+  return {
+    host,
+    frames,
+    nowcast: toFrames(data.radar?.nowcast),
+    satellite: toFrames(data.satellite?.infrared),
+  };
+}
+
+/** GMGSI visible-over-longwave composite with a natural day/night terminator. */
+export function satelliteTileTemplate(host: string, path: string): string {
+  return `${host}${path}/256/{z}/{x}/{y}/0/0_0.png`;
 }
 
 export function radarTileTemplate(

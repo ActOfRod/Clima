@@ -8,7 +8,7 @@ Live: [https://actofrod.github.io/Clima/](https://actofrod.github.io/Clima/)
 
 - **Weather (home)** — current conditions, hourly strip, air conditions, 7-day forecast
 - **Local** — on-device Clima AI briefing, forecast trust, the Clima local model, teach-Clima feedback, NWS alerts (US)
-- **Radar** — [LibreWXR](https://librewxr.net) real radar composites worldwide with a 1-hour nowcast and selectable palettes; NOAA NEXRAD / NASA GPM as fallback
+- **Radar** — [LibreWXR](https://librewxr.net) real radar composites worldwide with a 1-hour nowcast and selectable palettes; a Radar / Satellite / Both switch adds the animated NOAA GMGSI satellite mosaic (visible by day, infrared at night); NOAA NEXRAD / NASA GPM as fallback
 - **Cities / Map / Settings** — saved places, location map, units, privacy
 
 Desktop and tablet use a sidebar shell inspired by the reference dashboard. Phones use a stacked layout with a bottom tab bar.
@@ -28,8 +28,8 @@ Clima checks how every major model has actually performed at your spot, then cor
 
 1. **Training data.** The last 60 days of what ECMWF, GFS, ICON, GEM, UKMO (and NBM in the US) forecast 0–3 days ahead, from Open-Meteo's previous-runs archive. This is paired with real hourly readings from the nearest airport weather station (METAR/ASOS via the Iowa Environmental Mesonet, within 60 km).
 2. **Temperature.** A recency-weighted ridge regression per lead day learns each model's local bias, how much to trust each one, and the time-of-day error pattern. The regularization strength is chosen on the most recent 20% of days, which the model has not seen.
-3. **Rain.** A logistic regression turns the models' rain votes into a probability calibrated against what the station actually observed.
-4. **Honesty gate.** A correction is only applied if it beats the plain model average on held-out days. The **Clima Local Model** card shows the error reduction, who Clima trusts, and a skill trend.
+3. **Rain.** A logistic regression turns the models' rain signals into a probability calibrated against what the station actually observed. Its inputs are the models' vote and amounts, each model's own amount, cloud cover, humidity, and a ±2-hour timing window. Because rain hours are rare, the rain model is selected and gated with blocked 5-fold cross-validation over the whole window. On 90 days at eight Michigan airports, it beat the raw model vote at every station for every lead day, by 16–38% on average.
+4. **Honesty gate.** A correction is only applied if it beats the plain model average on held-out data. The **Clima Local Model** card shows the error reduction, who Clima trusts, and a skill trend.
 5. **Live anchor.** The latest station reading measures today's model error, and that correction fades out over the next few hours.
 6. **Gets better over time.** The model retrains every 3 hours on a rolling window, so it follows the seasons. Each training round is logged on-device.
 
@@ -42,7 +42,7 @@ GitHub Pages is a static host, so Clima only calls **no-key, CORS-friendly** API
 | [Open-Meteo](https://open-meteo.com) | Forecast, air quality, geocoding, GEFS ensemble, NBM, IFS, multi-model + previous-runs archive (ML training) | None | Global |
 | [api.weather.gov](https://api.weather.gov) | US watches / warnings, nearest US stations | None (User-Agent) | United States |
 | [Iowa State IEM](https://mesonet.agron.iastate.edu/) | Airport station observations (ML ground truth), fallback NEXRAD mosaic | None | Global METAR / CONUS radar |
-| [LibreWXR](https://librewxr.net) | Radar composites, nowcast, motion arrows (CC-BY-4.0) | None | Global |
+| [LibreWXR](https://librewxr.net) | Radar composites, nowcast, motion arrows, GMGSI satellite (CC-BY-4.0) | None | Global |
 | [NASA GIBS / GPM IMERG](https://nasa.gov) | Global precipitation radar | None | Global |
 | [Esri Dark Gray](https://www.esri.com) | Dark unlabeled basemap | None | Global |
 
