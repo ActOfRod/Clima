@@ -21,6 +21,17 @@ export function formatTemp(celsius: number, units: Units, withUnit = true): stri
   return withUnit ? `${value}°` : `${value}`;
 }
 
+/** A temperature difference (not a reading): no +32 offset for °F. */
+export function formatTempDelta(celsius: number, units: Units): string {
+  const value = units === "imperial" ? celsius * 1.8 : celsius;
+  return `${value.toFixed(1)}°`;
+}
+
+export function formatDistance(km: number, units: Units): string {
+  if (units === "imperial") return `${Math.round(kmToMi(km))} mi`;
+  return `${Math.round(km)} km`;
+}
+
 export function formatWind(kmh: number, units: Units): string {
   if (units === "imperial") return `${kmhToMph(kmh).toFixed(1)} mph`;
   const pretty = kmh < 10 ? kmh.toFixed(1) : Math.round(kmh).toString();

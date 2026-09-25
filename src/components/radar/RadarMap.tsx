@@ -2,9 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from "react-leaflet";
 import { Pause, Play } from "lucide-react";
 import { gpmFrames, gpmTileTemplate } from "../../api/gpm";
+import {
+  LIBREWXR_ATTRIBUTION,
+  fetchRadarCatalog,
+  paletteLegend,
+  radarTileTemplate,
+} from "../../api/librewxr";
 import { nexradFrames, nexradTileTemplate } from "../../api/nexrad";
 import { useApp } from "../../context/AppContext";
 import { isConus } from "../../lib/geo";
+import type { RadarCatalog } from "../../types";
 import { RadarFader } from "./radarFader";
 import {
   prefetchImages,
@@ -64,6 +71,8 @@ function RadarLoop({
   playing,
   frameMs,
   maxNativeZoom,
+  skin,
+  attribution,
   onIndex,
 }: {
   urls: string[];
@@ -71,6 +80,8 @@ function RadarLoop({
   playing: boolean;
   frameMs: number;
   maxNativeZoom: number;
+  skin: boolean;
+  attribution?: string;
   onIndex: (index: number) => void;
 }) {
   const map = useMap();
@@ -87,7 +98,7 @@ function RadarLoop({
   useEffect(() => {
     const initial = urlsRef.current[indexRef.current] ?? urlsRef.current[0];
     if (!initial) return;
-    const fader = new RadarFader(map, maxNativeZoom, initial);
+    const fader = new RadarFader(map, maxNativeZoom, initial, { skin, attribution });
     fader.pos = indexRef.current;
     faderRef.current = fader;
     fader.step(urlsRef.current, false, 0, frameMs, indexRef.current);
@@ -95,7 +106,7 @@ function RadarLoop({
       fader.destroy();
       faderRef.current = null;
     };
-  }, [map, maxNativeZoom]);
+  }, [map, maxNativeZoom, skin, attribution]);
 
   useEffect(() => {
     const run = () => {
@@ -157,41 +168,127 @@ function formatStamp(unix: number): string {
   });
 }
 
+type RadarSource = "librewxr" | "nexrad" | "gpm";
+
+interface LoopFrame {
+  time: number;
+  url: string;
+  nowcast: boolean;
+}
+
+const SOURCES: Record<
+  RadarSource,
+  {
+    maxNativeZoom: number;
+    frameMs: number;
+    zoom: number;
+    skin: boolean;
+    label: string;
+    attribution?: string;
+  }
+> = {
+  librewxr: {
+    maxNativeZoom: 9,
+    frameMs: 520,
+    zoom: 7,
+    skin: false,
+    label: "LibreWXR — real radar composites + satellite rain, 1 h nowcast",
+    attribution: LIBREWXR_ATTRIBUTION,
+  },
+  nexrad: {
+    maxNativeZoom: 8,
+    frameMs: 560,
+    zoom: 7,
+    skin: true,
+    label: "HD NOAA NEXRAD (Iowa State)",
+  },
+  gpm: {
+    maxNativeZoom: 6,
+    frameMs: 860,
+    zoom: 4,
+    skin: true,
+    label: "NASA GPM IMERG — global, no watermarks",
+  },
+};
+
 export function RadarMap({ height = "100%" }: { height?: string }) {
   const { place, settings } = useApp();
   const conus = isConus(place);
-  const [index, setIndex] = useState(() =>
-    isConus(place) ? nexradFrames().length - 1 : gpmFrames().length - 1,
-  );
+  const [catalog, setCatalog] = useState<RadarCatalog | null>(null);
+  const [catalogFailed, setCatalogFailed] = useState(false);
+  const [pinned, setPinned] = useState<number | null>(null);
   const [playing, setPlaying] = useState(settings.animations);
   const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    setIndex(conus ? nexradFrames().length - 1 : gpmFrames().length - 1);
-  }, [conus]);
 
   useEffect(() => {
     const id = window.setInterval(() => setTick((n) => n + 1), 5 * 60_000);
     return () => window.clearInterval(id);
   }, []);
 
-  const frames = useMemo(() => {
+  useEffect(() => {
+    let cancelled = false;
+    fetchRadarCatalog()
+      .then((next) => {
+        if (cancelled) return;
+        setCatalog(next);
+        setCatalogFailed(false);
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tick]);
+
+  const source: RadarSource | null = catalog
+    ? "librewxr"
+    : catalogFailed
+      ? conus
+        ? "nexrad"
+        : "gpm"
+      : null;
+  const config = SOURCES[source ?? (conus ? "nexrad" : "gpm")];
+
+  useEffect(() => {
+    setPinned(null);
+  }, [source]);
+
+  const frames = useMemo<LoopFrame[]>(() => {
     void tick;
-    return conus ? nexradFrames() : gpmFrames();
-  }, [conus, tick]);
+    switch (source) {
+      case "librewxr": {
+        if (!catalog) return [];
+        const url = (path: string) =>
+          radarTileTemplate(catalog.host, path, settings.radarPalette, settings.radarArrows);
+        return [
+          ...catalog.frames.map((f) => ({ time: f.time, url: url(f.path), nowcast: false })),
+          ...catalog.nowcast.map((f) => ({ time: f.time, url: url(f.path), nowcast: true })),
+        ];
+      }
+      case "nexrad":
+        return nexradFrames().map((f) => ({
+          time: f.time,
+          url: nexradTileTemplate(f.id),
+          nowcast: false,
+        }));
+      case "gpm":
+        return gpmFrames().map((f) => ({ time: f.time, url: gpmTileTemplate(f.id), nowcast: false }));
+      case null:
+        return [];
+      default: {
+        const never: never = source;
+        return never;
+      }
+    }
+  }, [source, catalog, settings.radarPalette, settings.radarArrows, tick]);
 
-  const urls = useMemo(
-    () =>
-      frames.map((frame) =>
-        conus ? nexradTileTemplate(frame.id) : gpmTileTemplate(frame.id),
-      ),
-    [frames, conus],
-  );
+  const urls = useMemo(() => frames.map((f) => f.url), [frames]);
+  const liveIndex = Math.max(0, frames.filter((f) => !f.nowcast).length - 1);
+  const hasNowcast = frames.some((f) => f.nowcast);
 
-  const maxNativeZoom = conus ? 8 : 6;
-  const frameMs = conus ? 560 : 860;
-
-  const safeIndex = Math.min(index, Math.max(0, frames.length - 1));
+  const safeIndex =
+    pinned == null ? liveIndex : Math.min(pinned, Math.max(0, frames.length - 1));
   const current = frames[safeIndex] ?? frames[frames.length - 1];
   const stamp = current ? formatStamp(current.time) : "";
   const startStamp = frames[0] ? formatStamp(frames[0].time) : "";
@@ -207,11 +304,11 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
       </p>
       <div className="relative" style={{ height: "calc(100% - 96px)" }}>
         <MapContainer
-          key={conus ? "nexrad-hd" : "gpm-hd"}
+          key={source ?? "pending"}
           center={[place.latitude, place.longitude]}
-          zoom={conus ? 7 : 4}
+          zoom={config.zoom}
           minZoom={3}
-          maxZoom={maxNativeZoom + 2}
+          maxZoom={config.maxNativeZoom + 2}
           className="h-full w-full"
           style={{ height: "100%", width: "100%" }}
           zoomControl
@@ -246,9 +343,11 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
               urls={urls}
               index={safeIndex}
               playing={playing}
-              frameMs={frameMs}
-              maxNativeZoom={maxNativeZoom}
-              onIndex={setIndex}
+              frameMs={config.frameMs}
+              maxNativeZoom={config.maxNativeZoom}
+              skin={config.skin}
+              attribution={config.attribution}
+              onIndex={setPinned}
             />
           )}
           <Recenter lat={place.latitude} lon={place.longitude} />
@@ -265,7 +364,7 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
           >
             {playing ? <Pause size={18} /> : <Play size={18} />}
           </button>
-          <div className="min-w-0 flex-1">
+          <div className="relative min-w-0 flex-1">
             <input
               type="range"
               min={0}
@@ -274,27 +373,46 @@ export function RadarMap({ height = "100%" }: { height?: string }) {
               onPointerDown={() => setPlaying(false)}
               onChange={(e) => {
                 setPlaying(false);
-                setIndex(Number(e.target.value));
+                setPinned(Number(e.target.value));
               }}
               className="radar-scrub"
               aria-label="Radar time"
             />
+            {hasNowcast && frames.length > 1 && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute top-0 h-2 w-0.5 -translate-x-1/2 rounded-full bg-white/70"
+                style={{ left: `${(liveIndex / (frames.length - 1)) * 100}%` }}
+              />
+            )}
             <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted">
               <span>{startStamp}</span>
-              <span className="font-medium text-white">{stamp}</span>
+              <span className="flex items-center gap-1.5 font-medium text-ink">
+                {stamp}
+                {current?.nowcast && (
+                  <span className="rounded-full bg-accent px-1.5 py-px text-[9px] font-semibold tracking-wide text-on-accent">
+                    FORECAST
+                  </span>
+                )}
+              </span>
               <span>{endStamp}</span>
             </div>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-between text-[10px] text-muted">
-          <span>
-            {conus
-              ? "HD NOAA NEXRAD (Iowa State)"
-              : "NASA GPM IMERG — global, no watermarks"}
-          </span>
+          <span>{source ? config.label : "Loading radar…"}</span>
           <span className="flex items-center gap-2">
             Light
-            <span className="h-2 w-24 rounded-full bg-gradient-to-r from-[#3dd6c6] via-[#f5c16c] to-[#ff5d73]" />
+            {source === "librewxr" ? (
+              <span
+                className="h-2 w-24 rounded-full"
+                style={{
+                  background: `linear-gradient(to right, ${paletteLegend(settings.radarPalette).join(", ")})`,
+                }}
+              />
+            ) : (
+              <span className="h-2 w-24 rounded-full bg-gradient-to-r from-[#3dd6c6] via-[#f5c16c] to-[#ff5d73]" />
+            )}
             Heavy
           </span>
         </div>

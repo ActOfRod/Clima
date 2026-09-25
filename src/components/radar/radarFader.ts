@@ -6,16 +6,27 @@ function layerUrl(layer: L.TileLayer): string {
   return (layer as unknown as { _url?: string })._url ?? "";
 }
 
+export interface RadarFaderOptions {
+  /** Reshade raw tiles on a canvas. Pre-rendered sources (LibreWXR) look best untouched. */
+  skin: boolean;
+  attribution?: string;
+}
+
 export class RadarFader {
   private map: L.Map;
-  private base: L.TileLayer;
+  private base: L.TileLayer | null;
   private front: L.TileLayer;
   private back: L.TileLayer;
   private ready = new Set<string>();
   private lastBase = "";
   pos = 0;
 
-  constructor(map: L.Map, maxNativeZoom: number, initialUrl: string) {
+  constructor(
+    map: L.Map,
+    maxNativeZoom: number,
+    initialUrl: string,
+    options: RadarFaderOptions = { skin: true },
+  ) {
     this.map = map;
     if (!map.getPane("radar-base")) {
       const basePane = map.createPane("radar-base");
@@ -38,7 +49,7 @@ export class RadarFader {
       updateWhenZooming: true,
       opacity: RADAR_OPACITY,
     };
-    const skinned: L.TileLayerOptions = {
+    const overlay: L.TileLayerOptions = {
       pane: "radar",
       maxNativeZoom,
       maxZoom: maxNativeZoom + 2,
@@ -46,10 +57,17 @@ export class RadarFader {
       keepBuffer: 6,
       updateWhenIdle: false,
       updateWhenZooming: false,
+      attribution: options.attribution,
     };
-    this.base = L.tileLayer(initialUrl, raster).addTo(map);
-    this.front = contourTileLayer(initialUrl, { ...skinned, opacity: RADAR_OPACITY }).addTo(map);
-    this.back = contourTileLayer(initialUrl, { ...skinned, opacity: 0 }).addTo(map);
+    if (options.skin) {
+      this.base = L.tileLayer(initialUrl, raster).addTo(map);
+      this.front = contourTileLayer(initialUrl, { ...overlay, opacity: RADAR_OPACITY }).addTo(map);
+      this.back = contourTileLayer(initialUrl, { ...overlay, opacity: 0 }).addTo(map);
+    } else {
+      this.base = null;
+      this.front = L.tileLayer(initialUrl, { ...overlay, opacity: RADAR_OPACITY }).addTo(map);
+      this.back = L.tileLayer(initialUrl, { ...overlay, opacity: 0 }).addTo(map);
+    }
     this.lastBase = initialUrl;
     this.watch(this.front);
     this.watch(this.back);
@@ -146,13 +164,13 @@ export class RadarFader {
   }
 
   private syncBase(url: string) {
-    if (!url || url === this.lastBase) return;
+    if (!this.base || !url || url === this.lastBase) return;
     this.lastBase = url;
     this.base.setUrl(url);
   }
 
   destroy() {
-    this.map.removeLayer(this.base);
+    if (this.base) this.map.removeLayer(this.base);
     this.map.removeLayer(this.front);
     this.map.removeLayer(this.back);
   }

@@ -8,6 +8,12 @@ import {
   type ReactNode,
 } from "react";
 import { reverseGeocode } from "../api/geocoding";
+import { DEFAULT_RADAR_PALETTE } from "../api/librewxr";
+import {
+  loadLocalLearning,
+  withLocalLearning,
+  type LocalLearning,
+} from "../api/localLearning";
 import { isGenericPlaceName } from "../lib/locality";
 import { loadWeather } from "../api/weather";
 import { generateBriefing } from "../ai/insights";
@@ -44,6 +50,8 @@ const DEFAULT_SETTINGS: SettingsState = {
   animations: true,
   theme: "system",
   defaultPage: "weather",
+  radarPalette: DEFAULT_RADAR_PALETTE,
+  radarArrows: false,
 };
 
 interface AppState {
@@ -90,10 +98,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     readJson<PersonalModel>("personal", DEFAULT_PERSONAL),
   );
 
-  const displayWeather = useMemo(
-    () => (weather ? applyPersonal(weather, personal) : null),
-    [weather, personal],
-  );
+  const [learning, setLearning] = useState<LocalLearning | null>(null);
+
+  const displayWeather = useMemo(() => {
+    if (!weather) return null;
+    const learned = learning ? withLocalLearning(weather, learning) : weather;
+    return applyPersonal(learned, personal);
+  }, [weather, learning, personal]);
 
   const briefing = useMemo(
     () => (displayWeather ? generateBriefing(displayWeather, settings.units) : null),
@@ -216,6 +227,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [place, tick]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadLocalLearning(place)
+      .then((next) => {
+        if (!cancelled) setLearning(next);
+      })
+      .catch(() => {
+        if (!cancelled) setLearning(null);
       });
     return () => {
       cancelled = true;

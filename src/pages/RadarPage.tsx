@@ -12,8 +12,8 @@ export function RadarPage() {
       <div>
         <h1 className="text-2xl font-semibold">Radar</h1>
         <p className="text-sm text-muted">
-          High-def radar around {place.name}. US uses NOAA NEXRAD; everywhere else uses NASA GPM
-          — no logo tiles.
+          Real radar around {place.name} from national networks worldwide, plus a 1-hour forecast
+          of where the rain is heading — no logo tiles.
         </p>
       </div>
       <div className="min-h-0 flex-1">
