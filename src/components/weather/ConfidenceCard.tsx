@@ -1,8 +1,14 @@
+import { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { formatTemp } from "../../lib/units";
+import { Expandable, SeeMoreButton } from "../ui/Expandable";
+import { LocalModelDetails } from "./LocalModelDetails";
+
+const DETAILS_ID = "forecast-trust-details";
 
 export function ConfidenceCard() {
   const { weather, settings } = useApp();
+  const [open, setOpen] = useState(false);
   const skill = weather?.skill;
   if (!skill) return null;
   const tone =
@@ -14,9 +20,12 @@ export function ConfidenceCard() {
 
   return (
     <section className="card p-5">
-      <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">
-        FORECAST TRUST
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">
+          FORECAST TRUST
+        </h2>
+        <SeeMoreButton open={open} onToggle={() => setOpen((o) => !o)} controls={DETAILS_ID} />
+      </div>
       <div className="mt-3 flex items-end justify-between gap-4">
         <div>
           <div className={`text-3xl font-semibold ${tone}`}>{skill.label}</div>
@@ -42,6 +51,11 @@ export function ConfidenceCard() {
       <p className="mt-2 text-[11px] text-muted">
         Blended from {skill.sources.join(" · ")}
       </p>
+      <Expandable open={open} id={DETAILS_ID}>
+        <div className="border-t border-line pt-4">
+          <LocalModelDetails />
+        </div>
+      </Expandable>
     </section>
   );
 }
