@@ -1,12 +1,40 @@
-import { Droplets, Sun, Thermometer, Wind } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import {
+  Droplets,
+  Eye,
+  Gauge,
+  Leaf,
+  Navigation,
+  Sun,
+  Sunrise,
+  Sunset,
+  Thermometer,
+  ThermometerSnowflake,
+  Wind,
+} from "lucide-react";
 import { useApp } from "../../context/AppContext";
-import { formatTemp, formatWind } from "../../lib/units";
+import { formatClock } from "../../lib/format";
+import {
+  aqiLabel,
+  formatPressure,
+  formatTemp,
+  formatVisibility,
+  formatWind,
+  windCardinal,
+} from "../../lib/units";
+import { Expandable, SeeMoreButton } from "../ui/Expandable";
 
-export function AirConditions({ seeMore = true }: { seeMore?: boolean }) {
+const DETAILS_ID = "air-conditions-details";
+
+export function AirConditions() {
   const { weather, settings } = useApp();
+  const [open, setOpen] = useState(false);
   if (!weather) return null;
   const c = weather.current;
+  const today = weather.daily[0];
+  const tz = weather.place.timezone;
+  const aqiValue = weather.air.usAqi ?? weather.air.europeanAqi;
+  const aqi = aqiLabel(aqiValue);
 
   const items = [
     {
@@ -31,20 +59,41 @@ export function AirConditions({ seeMore = true }: { seeMore?: boolean }) {
     },
   ];
 
+  const details = [
+    {
+      icon: ThermometerSnowflake,
+      label: "Dew point",
+      value: c.dewPoint != null ? formatTemp(c.dewPoint, settings.units) : "—",
+    },
+    { icon: Droplets, label: "Humidity", value: `${Math.round(c.humidity)}%` },
+    { icon: Gauge, label: "Pressure", value: formatPressure(c.pressure, settings.units) },
+    { icon: Eye, label: "Visibility", value: formatVisibility(c.visibility, settings.units) },
+    { icon: Navigation, label: "Wind from", value: windCardinal(c.windDirection) },
+    { icon: Wind, label: "Gusts", value: formatWind(c.windGusts, settings.units) },
+    {
+      icon: Sunrise,
+      label: "Sunrise",
+      value: today ? formatClock(today.sunrise, tz) : "—",
+    },
+    {
+      icon: Sunset,
+      label: "Sunset",
+      value: today ? formatClock(today.sunset, tz) : "—",
+    },
+    {
+      icon: Leaf,
+      label: "Air quality",
+      value: aqiValue != null ? `${aqi.label} (${Math.round(aqiValue)})` : aqi.label,
+    },
+  ];
+
   return (
     <section className="card p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">
           AIR CONDITIONS
         </h2>
-        {seeMore && (
-          <Link
-            to="/local"
-            className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-on-accent"
-          >
-            See more
-          </Link>
-        )}
+        <SeeMoreButton open={open} onToggle={() => setOpen((o) => !o)} controls={DETAILS_ID} />
       </div>
       <div className="grid grid-cols-2 gap-y-6">
         {items.map((item) => (
@@ -57,6 +106,19 @@ export function AirConditions({ seeMore = true }: { seeMore?: boolean }) {
           </div>
         ))}
       </div>
+      <Expandable open={open} id={DETAILS_ID}>
+        <div className="grid grid-cols-2 gap-2 border-t border-line pt-4 sm:grid-cols-3">
+          {details.map((d) => (
+            <div key={d.label} className="rounded-2xl bg-soft px-3 py-2.5">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted">
+                <d.icon size={12} />
+                {d.label}
+              </div>
+              <div className="mt-0.5 truncate text-sm font-semibold">{d.value}</div>
+            </div>
+          ))}
+        </div>
+      </Expandable>
     </section>
   );
 }

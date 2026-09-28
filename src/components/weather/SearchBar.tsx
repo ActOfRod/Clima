@@ -5,7 +5,7 @@ import { useApp } from "../../context/AppContext";
 import { placeLabel } from "../../lib/format";
 import type { Place } from "../../types";
 
-export function SearchBar() {
+export function SearchBar({ placeholder = "Search for cities" }: { placeholder?: string }) {
   const { setPlace, requestLocation, locating } = useApp();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Place[]>([]);
@@ -36,7 +36,7 @@ export function SearchBar() {
   return (
     <div ref={box} className="relative">
       <div className="flex items-center gap-3 rounded-2xl bg-panel-2 px-4 py-3 ring-1 ring-line">
-        <Search size={16} className="text-muted" />
+        <Search size={16} className="shrink-0 text-muted" />
         <input
           value={q}
           onChange={(e) => {
@@ -44,8 +44,9 @@ export function SearchBar() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          placeholder="Search for cities"
-          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+          placeholder={placeholder}
+          aria-label={placeholder}
+          className="w-full min-w-0 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
         />
         <button
           type="button"

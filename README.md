@@ -7,7 +7,7 @@ Live: [https://actofrod.github.io/Clima/](https://actofrod.github.io/Clima/)
 ## What’s in the app
 
 - **Weather (home)** — current conditions, hourly strip, air conditions, 7-day forecast
-- **Local** — on-device Clima AI briefing, forecast trust, the Clima local model, teach-Clima feedback, NWS alerts (US)
+- **Clima AI** — next-2-hours rain strip (live LibreWXR radar nowcast sampled at your spot, then Open-Meteo 15-minute forecasts), on-device briefing, forecast trust with the Clima local model behind See more, Model Training (Teach Clima) dialog, NWS alerts (US)
 - **Radar** — [LibreWXR](https://librewxr.net) real radar composites worldwide with a 1-hour nowcast and selectable palettes; a Radar / Satellite / Both switch adds the animated NOAA GMGSI satellite mosaic (visible by day, infrared at night); NOAA NEXRAD / NASA GPM as fallback
 - **Cities / Map / Settings** — saved places, location map, units, privacy
 

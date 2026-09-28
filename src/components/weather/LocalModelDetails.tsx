@@ -5,16 +5,15 @@ import { formatDistance, formatTemp, formatTempDelta } from "../../lib/units";
 const NOWCAST_MAX_AGE_MS = 3 * 60 * 60 * 1000;
 const LEAD_LABELS = ["Today", "Tomorrow", "Day 3", "Day 4+"];
 
-export function LocalModelCard() {
+/** Why the forecast earns its trust level: what the on-device model learned here. */
+export function LocalModelDetails() {
   const { weather, settings } = useApp();
   if (!weather) return null;
   const info = weather.local;
 
   return (
-    <section className="card p-5">
-      <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">
-        CLIMA LOCAL MODEL
-      </h2>
+    <div>
+      <h3 className="text-xs font-semibold tracking-[0.18em] text-muted">CLIMA LOCAL MODEL</h3>
       {info ? (
         <Body info={info} units={settings.units} />
       ) : (
@@ -22,7 +21,7 @@ export function LocalModelCard() {
           Checking the last 60 days of forecasts against real weather-station readings…
         </p>
       )}
-    </section>
+    </div>
   );
 }
 
