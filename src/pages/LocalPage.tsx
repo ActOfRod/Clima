@@ -3,6 +3,7 @@ import { ConfidenceCard } from "../components/weather/ConfidenceCard";
 import { CurrentHero } from "../components/weather/CurrentHero";
 import { HourlyForecast } from "../components/weather/HourlyForecast";
 import { ModelTrainingButton } from "../components/weather/ModelTraining";
+import { NextHourCard } from "../components/weather/NextHourCard";
 import { SearchBar } from "../components/weather/SearchBar";
 import { StatusScreen } from "../components/weather/Status";
 import { useApp } from "../context/AppContext";
@@ -31,6 +32,7 @@ export function LocalPage() {
     <div className="flex flex-col gap-5">
       <TopBar />
       <CurrentHero compact />
+      <NextHourCard />
       <ConfidenceCard />
       <AiInsights />
       {weather.alerts.length > 0 && (
