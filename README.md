@@ -8,7 +8,7 @@ Live: [https://actofrod.github.io/Clima/](https://actofrod.github.io/Clima/)
 
 - **Weather (home)** — current conditions, hourly strip, air conditions, 7-day forecast
 - **Clima AI** — next-2-hours rain strip (live LibreWXR radar nowcast sampled at your spot, then Open-Meteo 15-minute forecasts), on-device briefing, forecast trust with the Clima local model behind See more, Model Training (Teach Clima) dialog, NWS alerts (US)
-- **Radar** — [LibreWXR](https://librewxr.net) real radar composites worldwide with a 1-hour nowcast and selectable palettes; a Radar / Satellite / Both switch adds the animated NOAA GMGSI satellite mosaic (visible by day, infrared at night); NOAA NEXRAD / NASA GPM as fallback
+- **Radar** — [LibreWXR](https://librewxr.net) real radar composites worldwide with a 1-hour nowcast and selectable palettes, played as one continuous dissolve (every frame preloaded as its own layer and blended additively, so there is no mid-fade dimming or blanking); a Radar / Satellite / Both switch adds the animated NOAA GMGSI satellite mosaic (visible by day, infrared at night); NOAA NEXRAD / NASA GPM as fallback
 - **Cities / Map / Settings** — saved places, location map, units, privacy
 
 Desktop and tablet use a sidebar shell inspired by the reference dashboard. Phones use a stacked layout with a bottom tab bar.
@@ -71,14 +71,24 @@ Pages is enabled on this repo (`github-pages` environment, workflow source).
 
 ## Android / Play Store
 
-The web app is a PWA and a Capacitor shell (`com.actofrod.clima`).
+The web app is a PWA and a Capacitor 8 shell (`com.actofrod.clima`) targeting **Android 16 (API 36)**, which Google Play requires for new apps and updates since August 31, 2026.
+
+Requirements: Node 22+, **Android Studio Otter (2025.2.1) or newer**, JDK 21 (bundled with Android Studio).
 
 ```bash
-npm run android:sync
-npx cap add android   # first time only
+npm run android:sync   # build the web app and copy it into android/
 npx cap open android
 ```
 
-Then in Android Studio: generate a signed **AAB**, create a Play Console listing, and point privacy policy at `https://actofrod.github.io/Clima/privacy`.
+Then in Android Studio: **Build → Generate Signed App Bundle** (AAB). Bump `versionCode` in `android/app/build.gradle` for every upload after the first.
 
-Play Console itself (store listing, signing key, review) has to be done in Google’s UI.
+Privacy policy URL for the Play listing: `https://actofrod.github.io/Clima/privacy/` (a static page, so it returns HTTP 200 for Google's checks; it goes live once this branch is merged to `main`).
+
+Native behavior:
+
+- Location uses the Capacitor Geolocation plugin (runtime permission prompt), refreshes on every launch and when the app returns to the foreground, and only follows a chosen city after you pick one.
+- Android's back button closes the Teach Clima dialog, then goes back a page, then exits.
+- Edge to edge on Android 15+: Capacitor's SystemBars injects `--safe-area-inset-*`, used through `--sat/--sab/--sal/--sar` in `index.css`.
+- The service worker is web-only; the Android app serves its bundled assets directly.
+
+Play Console itself (store listing, signing key, Data safety form, review) has to be done in Google’s UI.

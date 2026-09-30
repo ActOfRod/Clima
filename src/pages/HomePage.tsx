@@ -3,8 +3,8 @@ import { ConfidenceCard } from "../components/weather/ConfidenceCard";
 import { CurrentHero } from "../components/weather/CurrentHero";
 import { DailyForecast } from "../components/weather/DailyForecast";
 import { HourlyForecast } from "../components/weather/HourlyForecast";
-import { SearchBar } from "../components/weather/SearchBar";
 import { StatusScreen } from "../components/weather/Status";
+import { TopBar } from "../components/weather/TopBar";
 import { useApp } from "../context/AppContext";
 import { useIsDesktop } from "../hooks/useMediaQuery";
 
@@ -13,7 +13,7 @@ export function HomePage() {
   const desktop = useIsDesktop();
   return (
     <div className="flex flex-col gap-5">
-      <SearchBar />
+      <TopBar />
       {(loading || error || !weather) && <StatusScreen />}
       {weather && !error && (
         desktop ? <DesktopHome /> : <MobileHome />

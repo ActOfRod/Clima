@@ -12,9 +12,10 @@ const config: CapacitorConfig = {
     backgroundColor: "#0b1220",
   },
   plugins: {
-    StatusBar: {
-      style: "DARK",
-      backgroundColor: "#0b1220",
+    // Android 15+ draws edge to edge; this injects --safe-area-inset-* for index.css.
+    SystemBars: {
+      insetsHandling: "css",
+      style: "DEFAULT",
     },
   },
 };

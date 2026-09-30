@@ -13,12 +13,13 @@ import { nexradFrames, nexradTileTemplate } from "../../api/nexrad";
 import { useApp } from "../../context/AppContext";
 import { isConus } from "../../lib/geo";
 import type { MapLayer, RadarCatalog } from "../../types";
-import { RadarFader } from "./radarFader";
+import { RadarAnimator } from "./radarAnimator";
 import {
-  prefetchImages,
-  tileUrlsForFrames,
-  tileZoom,
-  visibleTileRange,
+  DEFAULT_TIMING,
+  advancePlayback,
+  frameMix,
+  startPlayback,
+  type PlaybackState,
 } from "./radarPlayback";
 import "leaflet/dist/leaflet.css";
 
@@ -86,78 +87,66 @@ function RadarLoop({
   onIndex: (index: number) => void;
 }) {
   const map = useMap();
-  const faderRef = useRef<RadarFader | null>(null);
-  const urlsRef = useRef(urls);
+  const animatorRef = useRef<RadarAnimator | null>(null);
+  const stateRef = useRef<PlaybackState>(startPlayback(index));
   const indexRef = useRef(index);
   const onIndexRef = useRef(onIndex);
-  const cacheRef = useRef<HTMLImageElement[]>([]);
 
-  urlsRef.current = urls;
   indexRef.current = index;
   onIndexRef.current = onIndex;
 
   useEffect(() => {
-    const initial = urlsRef.current[indexRef.current] ?? urlsRef.current[0];
-    if (!initial) return;
-    const fader = new RadarFader(map, maxNativeZoom, initial, { skin, attribution });
-    fader.pos = indexRef.current;
-    faderRef.current = fader;
-    fader.step(urlsRef.current, false, 0, frameMs, indexRef.current);
+    const animator = new RadarAnimator(map, { maxNativeZoom, skin, attribution });
+    animatorRef.current = animator;
     return () => {
-      fader.destroy();
-      faderRef.current = null;
+      animator.destroy();
+      animatorRef.current = null;
     };
   }, [map, maxNativeZoom, skin, attribution]);
 
   useEffect(() => {
-    const run = () => {
-      if (urls.length === 0) return;
-      const bounds = map.getBounds();
-      const range = visibleTileRange(
-        {
-          west: bounds.getWest(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          north: bounds.getNorth(),
-        },
-        tileZoom(map.getZoom(), maxNativeZoom),
-        1,
-      );
-      prefetchImages(tileUrlsForFrames(urls, range, 360), cacheRef.current);
-    };
-    run();
-    map.on("moveend zoomend", run);
-    return () => {
-      map.off("moveend zoomend", run);
-    };
-  }, [map, urls, maxNativeZoom]);
-
-  useEffect(() => {
-    if (playing) return;
-    faderRef.current?.step(urls, false, 0, frameMs, index);
-  }, [playing, urls, frameMs, index]);
+    const animator = animatorRef.current;
+    if (!animator) return;
+    animator.setFrames(urls);
+    if (!playing) {
+      stateRef.current = startPlayback(index);
+      animator.render(frameMix(stateRef.current, urls.length));
+    }
+  }, [urls, playing, index, maxNativeZoom, skin, attribution]);
 
   useEffect(() => {
     if (!playing) return;
+    const animator = animatorRef.current;
+    if (!animator) return;
+    stateRef.current = startPlayback(indexRef.current);
+    const timing = { ...DEFAULT_TIMING, frameMs };
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      const fader = faderRef.current;
-      const list = urlsRef.current;
-      if (fader && list.length > 0) {
-        const dt = Math.min(50, now - last);
-        last = now;
-        const next = fader.step(list, true, dt, frameMs, indexRef.current);
-        if (next !== indexRef.current) {
-          indexRef.current = next;
-          onIndexRef.current(next);
+      const dt = Math.min(64, now - last);
+      last = now;
+      const count = animator.count;
+      if (count > 0) {
+        stateRef.current = advancePlayback(
+          stateRef.current,
+          dt,
+          count,
+          (i) => animator.isReady(i),
+          timing,
+        );
+        const mix = frameMix(stateRef.current, count);
+        animator.render(mix);
+        const shown = mix.frac >= 0.5 ? mix.to : mix.from;
+        if (shown !== indexRef.current) {
+          indexRef.current = shown;
+          onIndexRef.current(shown);
         }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, frameMs]);
+  }, [playing, frameMs, maxNativeZoom, skin, attribution]);
 
   return null;
 }

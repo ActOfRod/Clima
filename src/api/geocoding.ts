@@ -1,4 +1,4 @@
-import { isGenericPlaceName, regionAbbrev } from "../lib/locality";
+import { regionAbbrev } from "../lib/locality";
 import type { Place } from "../types";
 import { getJson } from "./client";
 
@@ -17,18 +17,24 @@ interface SearchResponse {
   results?: GeoResult[];
 }
 
-interface ReverseResponse {
-  results?: GeoResult[];
+interface AdminEntry {
+  name?: string;
+  description?: string;
+  order?: number;
+  adminLevel?: number;
 }
 
-interface BigDataCloudResponse {
+export interface BigDataCloudResponse {
   city?: string;
   locality?: string;
   principalSubdivision?: string;
   principalSubdivisionCode?: string;
   countryName?: string;
   countryCode?: string;
+  localityInfo?: { administrative?: AdminEntry[] };
 }
+
+const SETTLEMENT = /\b(city|town|village|township|hamlet|municipality|borough|commune|charter township)\b/i;
 
 export async function searchPlaces(query: string): Promise<Place[]> {
   const q = query.trim();
@@ -45,44 +51,41 @@ export async function searchPlaces(query: string): Promise<Place[]> {
   return (data.results ?? []).map(toPlace);
 }
 
-export async function reverseGeocode(
-  latitude: number,
-  longitude: number,
-): Promise<Place> {
-  const fromMeteo = await reverseOpenMeteo(latitude, longitude);
-  if (fromMeteo && !isGenericPlaceName(fromMeteo.name)) return fromMeteo;
-
-  const fromBdc = await reverseBigDataCloud(latitude, longitude);
-  if (fromBdc && !isGenericPlaceName(fromBdc.name)) return fromBdc;
-
-  return fromMeteo ?? fromBdc ?? coordPlace(latitude, longitude);
+/**
+ * BigDataCloud's `city` is the wider urban area (Warren, MI reports "Detroit"),
+ * while `locality` is the most specific name, which can be a neighborhood.
+ * Use the locality when it is a settlement in its own right, and the city when
+ * the locality is only part of it (Manhattan, Westminster, a Paris quartier).
+ */
+export function pickLocalityName(data: BigDataCloudResponse): string | null {
+  const city = data.city?.trim() || "";
+  const locality = data.locality?.trim() || "";
+  if (!locality) return city || null;
+  if (!city || locality.toLowerCase() === city.toLowerCase()) return locality;
+  const entry = data.localityInfo?.administrative?.find(
+    (a) => a.name?.trim().toLowerCase() === locality.toLowerCase(),
+  );
+  const description = entry?.description ?? "";
+  const partOfCity = description.toLowerCase().includes(city.toLowerCase());
+  if (entry && SETTLEMENT.test(description) && !partOfCity) return locality;
+  return city;
 }
 
-async function reverseOpenMeteo(
-  latitude: number,
-  longitude: number,
-): Promise<Place | null> {
-  const params = new URLSearchParams({
-    latitude: String(latitude),
-    longitude: String(longitude),
-    language: "en",
-    format: "json",
-  });
-  try {
-    const data = await getJson<ReverseResponse>(
-      `https://geocoding-api.open-meteo.com/v1/reverse?${params}`,
-    );
-    if (data.results?.[0]) return toPlace(data.results[0]);
-  } catch {
-    /* fall through */
-  }
-  return null;
+export function currentPlaceId(latitude: number, longitude: number): string {
+  return `current:${latitude.toFixed(3)},${longitude.toFixed(3)}`;
 }
 
-async function reverseBigDataCloud(
-  latitude: number,
-  longitude: number,
-): Promise<Place | null> {
+/**
+ * Name a GPS fix. The returned place always keeps the device's own coordinates,
+ * so the forecast is for where you are, not the centre of the nearest big city.
+ */
+export async function reverseGeocode(latitude: number, longitude: number): Promise<Place> {
+  const base: Place = {
+    id: currentPlaceId(latitude, longitude),
+    name: "Current location",
+    latitude,
+    longitude,
+  };
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -91,34 +94,23 @@ async function reverseBigDataCloud(
   try {
     const data = await getJson<BigDataCloudResponse>(
       `https://api.bigdatacloud.net/data/reverse-geocode-client?${params}`,
+      {},
+      8_000,
     );
-    const name = data.city || data.locality;
-    if (!name) return null;
-    const admin =
-      regionAbbrev(data.principalSubdivisionCode, data.countryCode) ??
-      data.principalSubdivision ??
-      undefined;
+    const name = pickLocalityName(data);
     return {
-      id: `${latitude.toFixed(4)},${longitude.toFixed(4)}`,
-      name,
-      admin,
+      ...base,
+      name: name ?? base.name,
+      admin:
+        regionAbbrev(data.principalSubdivisionCode, data.countryCode) ??
+        data.principalSubdivision ??
+        undefined,
       country: data.countryName,
       countryCode: data.countryCode?.toUpperCase(),
-      latitude,
-      longitude,
     };
   } catch {
-    return null;
+    return base;
   }
-}
-
-function coordPlace(latitude: number, longitude: number): Place {
-  return {
-    id: `${latitude.toFixed(3)},${longitude.toFixed(3)}`,
-    name: `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`,
-    latitude,
-    longitude,
-  };
 }
 
 function toPlace(r: GeoResult): Place {

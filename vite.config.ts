@@ -12,6 +12,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: false,
       includeAssets: [
         "favicon.svg",
         "favicon-32.png",
@@ -54,6 +55,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        navigateFallbackDenylist: [/\/privacy\/?$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*open-meteo\.com\/.*/i,

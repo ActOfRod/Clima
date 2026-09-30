@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { BrainCircuit, ChevronRight, X } from "lucide-react";
 import { useApp } from "../../context/AppContext";
+import { onBackButton } from "../../lib/native";
 import type { FeedbackKind } from "../../lib/personalModel";
 import { formatTempDelta } from "../../lib/units";
 import type { PersonalModel, Units } from "../../types";
@@ -60,10 +61,12 @@ function TeachClimaDialog({ open, onClose }: { open: boolean; onClose: () => voi
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKey);
+    const releaseBack = onBackButton(onClose);
     panel.current?.focus();
     return () => {
       document.body.style.overflow = overflow;
       document.removeEventListener("keydown", onKey);
+      releaseBack();
     };
   }, [open, onClose]);
 

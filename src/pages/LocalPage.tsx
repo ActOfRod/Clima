@@ -2,20 +2,10 @@ import { AiInsights } from "../components/weather/AiInsights";
 import { ConfidenceCard } from "../components/weather/ConfidenceCard";
 import { CurrentHero } from "../components/weather/CurrentHero";
 import { HourlyForecast } from "../components/weather/HourlyForecast";
-import { ModelTrainingButton } from "../components/weather/ModelTraining";
 import { NextHourCard } from "../components/weather/NextHourCard";
-import { SearchBar } from "../components/weather/SearchBar";
 import { StatusScreen } from "../components/weather/Status";
+import { TopBar } from "../components/weather/TopBar";
 import { useApp } from "../context/AppContext";
-
-function TopBar() {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      <SearchBar placeholder="Location" />
-      <ModelTrainingButton />
-    </div>
-  );
-}
 
 export function LocalPage() {
   const { weather, loading, error } = useApp();

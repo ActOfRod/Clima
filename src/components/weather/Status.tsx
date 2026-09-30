@@ -1,10 +1,15 @@
 import { useApp } from "../../context/AppContext";
 
 export function StatusScreen() {
-  const { loading, error, refresh } = useApp();
+  const { loading, error, refresh, findingLocation } = useApp();
   if (loading) {
     return (
       <div className="grid gap-4">
+        {findingLocation && (
+          <p className="px-1 text-sm text-muted" role="status">
+            Finding your location…
+          </p>
+        )}
         <div className="h-40 animate-pulse rounded-[28px] bg-soft" />
         <div className="h-36 animate-pulse rounded-[28px] bg-soft" />
         <div className="h-48 animate-pulse rounded-[28px] bg-soft" />
