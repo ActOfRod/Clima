@@ -22,9 +22,9 @@ export function blendRain(
 ): number {
   const ens = ensembleFrac * 100;
   if (peer == null || !Number.isFinite(peer)) {
-    return clamp(0.55 * official + 0.45 * ens, 0, 100);
+    return Math.round(clamp(0.55 * official + 0.45 * ens, 0, 100));
   }
-  return clamp(0.35 * official + 0.35 * peer + 0.3 * ens, 0, 100);
+  return Math.round(clamp(0.35 * official + 0.35 * peer + 0.3 * ens, 0, 100));
 }
 
 export function blendTemp(

@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { SearchBar } from "../components/weather/SearchBar";
+import { TopBar } from "../components/weather/TopBar";
 import { WeatherIcon } from "../components/weather/WeatherIcon";
 import { useApp } from "../context/AppContext";
 import { placeLabel } from "../lib/format";
@@ -11,7 +11,7 @@ export function CitiesPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <SearchBar />
+      <TopBar />
       <div>
         <h1 className="text-2xl font-semibold">Cities</h1>
         <p className="text-sm text-muted">

@@ -8,7 +8,7 @@ export function TopBar() {
   const { locationNotice, dismissLocationNotice } = useApp();
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <SearchBar placeholder="Location" />
         <ModelTrainingButton />
       </div>

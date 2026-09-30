@@ -29,14 +29,14 @@ export function ModelTrainingButton() {
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="flex w-full items-center gap-3 rounded-2xl bg-panel-2 px-4 py-3 text-left ring-1 ring-line"
+        className="flex w-full items-center gap-2 rounded-2xl bg-panel-2 px-3 py-3 text-left ring-1 ring-line sm:gap-3 sm:px-4"
       >
         <BrainCircuit size={16} className="shrink-0 text-accent" />
         <span className="min-w-0 flex-1 truncate text-sm text-ink">Model Training</span>
         <span className="hidden shrink-0 text-xs text-muted sm:inline">
           {personal.samples ? `${personal.samples} note${personal.samples === 1 ? "" : "s"}` : "Teach Clima"}
         </span>
-        <ChevronRight size={16} className="shrink-0 text-muted" />
+        <ChevronRight size={16} className="shrink-0 text-muted max-[374px]:hidden" />
       </button>
       <TeachClimaDialog
         open={open}

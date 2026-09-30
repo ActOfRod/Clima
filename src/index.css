@@ -190,25 +190,10 @@ input {
 
 .leaflet-radar-pane {
   z-index: 450;
-  isolation: isolate;
-}
-
-/* Additive dissolve: frames at (1 - f) and f opacity sum to one full-strength image. */
-@supports (mix-blend-mode: plus-lighter) {
-  .leaflet-radar-pane .radar-frame {
-    mix-blend-mode: plus-lighter;
-  }
 }
 
 .leaflet-labels-pane {
   z-index: 620;
-}
-
-.leaflet-tile.radar-overlap {
-  width: 280px !important;
-  height: 280px !important;
-  margin-left: -12px !important;
-  margin-top: -12px !important;
 }
 
 

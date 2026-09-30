@@ -16,7 +16,7 @@ const RETRAIN_MS = 3 * 60 * 60 * 1000;
 const STATION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const NO_STATION_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const MAX_HISTORY = 60;
-const FAILURE_BACKOFF_MS = 30 * 60 * 1000;
+const FAILURE_BACKOFF_MS = 10 * 60 * 1000;
 
 export interface LocalLearning {
   placeId: string;

@@ -54,7 +54,7 @@ export function applyPersonal(
   if (model.samples === 0 && model.tempBias === 0 && model.rainScale === 1) {
     return bundle;
   }
-  const scaleRain = (p: number) => clamp(p * model.rainScale, 0, 100);
+  const scaleRain = (p: number) => Math.round(clamp(p * model.rainScale, 0, 100));
   return {
     ...bundle,
     current: {

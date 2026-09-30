@@ -1,7 +1,7 @@
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import { RadarMap } from "../components/radar/RadarMap";
-import { SearchBar } from "../components/weather/SearchBar";
+import { TopBar } from "../components/weather/TopBar";
 import { useApp } from "../context/AppContext";
 import { useIsDesktop } from "../hooks/useMediaQuery";
 import "leaflet/dist/leaflet.css";
@@ -18,7 +18,7 @@ export function MapPage() {
   const desktop = useIsDesktop();
   return (
     <div className="flex flex-col gap-4">
-      <SearchBar />
+      <TopBar />
       <div>
         <h1 className="text-2xl font-semibold">Map</h1>
         <p className="text-sm text-muted">

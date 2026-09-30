@@ -9,6 +9,14 @@ export function readJson<T>(key: string, fallback: T): T {
   }
 }
 
+export function removeKey(key: string): void {
+  try {
+    localStorage.removeItem(PREFIX + key);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 export function writeJson<T>(key: string, value: T): void {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));

@@ -35,7 +35,7 @@ export function SearchBar({ placeholder = "Search for cities" }: { placeholder?:
 
   return (
     <div ref={box} className="relative">
-      <div className="flex items-center gap-3 rounded-2xl bg-panel-2 px-4 py-3 ring-1 ring-line">
+      <div className="flex items-center gap-2 rounded-2xl bg-panel-2 px-3 py-3 ring-1 ring-line sm:gap-3 sm:px-4">
         <Search size={16} className="shrink-0 text-muted" />
         <input
           value={q}
