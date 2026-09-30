@@ -107,6 +107,17 @@ describe("generateBriefing", () => {
     expect(result.summary.toLowerCase()).toMatch(/wet|rain/);
   });
 
+  it("shows whole-number rain chances even when the blend is fractional", () => {
+    const b = bundle();
+    b.hourly = b.hourly.map((h, i) =>
+      i >= 3 ? { ...h, rainChance: 64.8675432, precipitation: 0.4, weatherCode: 61 } : h,
+    );
+    const result = generateBriefing(b);
+    const text = [result.summary, ...result.cards.map((c) => c.body)].join(" ");
+    expect(text).toContain("65% chance");
+    expect(text).not.toMatch(/\d\.\d+%/);
+  });
+
   it("calls out low model agreement", () => {
     const result = generateBriefing(
       bundle({

@@ -51,7 +51,7 @@ export function generateBriefing(bundle: WeatherBundle, units: Units = "metric")
       body:
         mins <= 60
           ? `Precipitation looks likely in about ${mins || "a few"} minutes. Plan indoor gaps or bring a shell.`
-          : `Showers look most likely around ${when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} (${rainSoon.rainChance}% chance).`,
+          : `Showers look most likely around ${when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} (${Math.round(rainSoon.rainChance)}% chance).`,
       tone: "watch",
     });
   } else if (current.rainChance < 15 && !isWetCode(current.weatherCode)) {
@@ -148,7 +148,7 @@ function buildSummary(
   const air = formatTemp(current.temperature, units);
   const wind = formatWind(current.windSpeed, units);
   const rainBit = rainSoon
-    ? ` Expect wetter weather later (${rainSoon.rainChance}% chance).`
+    ? ` Expect wetter weather later (${Math.round(rainSoon.rainChance)}% chance).`
     : current.rainChance < 20
       ? " Rain risk stays low."
       : ` Rain chance is ${Math.round(current.rainChance)}%.`;

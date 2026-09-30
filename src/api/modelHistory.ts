@@ -57,7 +57,7 @@ export async function fetchModelHistory(
   const data = await getJson<HourlyResponse>(
     `https://previous-runs-api.open-meteo.com/v1/forecast?${params}`,
     {},
-    25_000,
+    40_000,
   );
   const hourly = data.hourly;
   if (!hourly?.time?.length) throw new Error("Empty model history");
