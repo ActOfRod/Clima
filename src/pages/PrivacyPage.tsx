@@ -3,28 +3,31 @@ export function PrivacyPage() {
     <article className="card mx-auto max-w-2xl space-y-4 p-6 text-sm leading-relaxed text-muted">
       <h1 className="text-2xl font-semibold text-ink">Privacy</h1>
       <p>
-        Clima is a client-side weather app. Forecasts, air quality, geocoding, radar, and US
-        alerts are requested directly from public weather APIs by your device.
+        Clima has no accounts, no ads, and no analytics. The app talks directly to public weather
+        services from your device; the developer runs no servers that receive your data.
       </p>
       <p>
-        If you allow location, the coordinates stay on your device and are used only to reverse
-        geocode a place name and fetch weather for that point. Saved cities, unit preferences,
-        Teach Clima notes, and the last viewed place are stored in local browser storage.
+        If you allow location, Clima reads your position each time it opens to show the weather
+        where you are. Your coordinates are sent to Open-Meteo (forecasts, air quality, past model
+        runs), BigDataCloud (your town's name), and in the US the National Weather Service (alerts,
+        nearest station). Readings from the nearest airport station come from the Iowa Environmental
+        Mesonet. Radar, satellite, and map tiles for the area on screen come from LibreWXR, Esri,
+        and NASA GIBS. Clima never tracks your location in the background.
       </p>
       <p>
-        Clima AI does not send your data to a language-model provider. Insights are computed locally
-        from the forecast payload.
+        Settings, saved cities, Teach Clima notes, and the forecast model Clima trains for your area
+        stay in local storage on this device and are never uploaded. Uninstalling or clearing the
+        app's storage deletes them.
       </p>
       <p>
-        The Clima local model trains on your device. To do that, the app downloads past model
-        forecasts from Open-Meteo and readings from the nearest public airport weather station via
-        the Iowa Environmental Mesonet. The trained model is stored in local browser storage and
-        is never uploaded.
+        These services receive your IP address and standard request details under their own
+        policies. Clima does not sell or share your data with anyone else.
       </p>
       <p>
-        We do not run our own analytics, ads, or accounts. Third-party APIs (Open-Meteo, National
-        Weather Service, Iowa Environmental Mesonet, LibreWXR, NASA GIBS, Esri) may log standard
-        request metadata according to their own policies.
+        Full policy:{" "}
+        <a className="text-accent" href="https://actofrod.github.io/Clima/privacy/">
+          actofrod.github.io/Clima/privacy
+        </a>
       </p>
     </article>
   );

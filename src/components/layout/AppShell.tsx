@@ -10,7 +10,15 @@ export function AppShell() {
 
 function DesktopShell() {
   return (
-    <div className="min-h-screen px-4 py-4 md:px-6 md:py-6">
+    <div
+      className="min-h-screen"
+      style={{
+        paddingTop: "max(1.5rem, var(--sat))",
+        paddingBottom: "max(1.5rem, var(--sab))",
+        paddingLeft: "max(1.5rem, var(--sal))",
+        paddingRight: "max(1.5rem, var(--sar))",
+      }}
+    >
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-[1400px] overflow-hidden rounded-[36px] bg-shell shadow-[0_40px_80px_rgba(0,0,0,0.18)] ring-1 ring-line">
         <aside className="flex w-[88px] flex-col items-center gap-2 bg-nav py-6">
           <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-panel-2 text-accent">
@@ -43,10 +51,20 @@ function DesktopShell() {
 function MobileShell() {
   return (
     <div className="min-h-dvh bg-surface">
-      <main className="px-4 pb-28 pt-[max(1rem,env(safe-area-inset-top))]">
+      <main
+        style={{
+          paddingTop: "max(1rem, var(--sat))",
+          paddingLeft: "max(1rem, var(--sal))",
+          paddingRight: "max(1rem, var(--sar))",
+          paddingBottom: "calc(7rem + var(--sab))",
+        }}
+      >
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-nav/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-nav/95 backdrop-blur"
+        style={{ paddingBottom: "var(--sab)", paddingLeft: "var(--sal)", paddingRight: "var(--sar)" }}
+      >
         <div
           className="mx-auto grid max-w-lg"
           style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}

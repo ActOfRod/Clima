@@ -1,4 +1,5 @@
 import type { ThemeId } from "../types";
+import { syncSystemBars } from "./native";
 
 export const THEMES: Array<{
   id: ThemeId;
@@ -29,4 +30,5 @@ export function applyTheme(id: ThemeId): void {
   const meta = document.querySelector('meta[name="theme-color"]');
   const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
   if (meta && bg) meta.setAttribute("content", bg);
+  syncSystemBars(resolved === "dark");
 }

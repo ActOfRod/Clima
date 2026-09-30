@@ -81,10 +81,14 @@ export function SettingsPage() {
       <section className="card space-y-4 p-5">
         <h2 className="text-xs font-semibold tracking-[0.18em] text-muted">LOCATION</h2>
         <Toggle
-          label="Ask for device location"
+          label="Follow my location"
           on={settings.useLocation}
           onChange={(useLocation) => updateSettings({ useLocation })}
         />
+        <p className="text-xs text-muted">
+          Clima shows the weather where you are each time it opens. Picking a city pins that city
+          until you tap the location pin again.
+        </p>
         <button
           type="button"
           onClick={requestLocation}
